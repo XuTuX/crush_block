@@ -1,5 +1,5 @@
 -- ============================================================
--- Link Your Area - Shop Schema
+-- Crush Block - Shop Schema
 -- Apply in Supabase SQL Editor
 -- 재실행 안전: IF NOT EXISTS / DROP IF EXISTS 사용
 -- ============================================================
@@ -7,13 +7,13 @@
 -- ============================================================
 -- 0) TABLE: user_shop_data
 -- 유저별 상점 데이터 (코인, 보유 아이템, 장착 아이템)
--- game_key 로 link_your_area 전용 데이터 분리
+-- game_key 로 crush_block 전용 데이터 분리
 -- ============================================================
 
 create table if not exists public.user_shop_data (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null,
-  game_key    text not null default 'link_your_area',
+  game_key    text not null default 'crush_block',
   coins       int  not null default 140,
   owned_icons      text[] not null default array['default_face']::text[],
   owned_block_skins text[] not null default array['red', 'blue']::text[],
@@ -65,7 +65,7 @@ on public.user_shop_data
 for select
 using (
   auth.uid() = user_id
-  and game_key = 'link_your_area'
+  and game_key = 'crush_block'
 );
 
 -- DELETE: 자기 자신의 상점 데이터만 삭제 가능 (회원 탈퇴 등)
@@ -74,7 +74,7 @@ on public.user_shop_data
 for delete
 using (
   auth.uid() = user_id
-  and game_key = 'link_your_area'
+  and game_key = 'crush_block'
 );
 
 -- INSERT / UPDATE 는 직접 허용하지 않음.
@@ -294,14 +294,14 @@ update public.user_shop_data
            equipped_block_skin
          )
        )[1]
- where game_key = 'link_your_area';
+ where game_key = 'crush_block';
 
 -- ============================================================
 -- 5) RPC: SERVER-AUTHORIZED SHOP MUTATIONS
 -- ============================================================
 
 create or replace function public.shop_ensure_user_data(
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns void
 language plpgsql
@@ -322,7 +322,7 @@ end;
 $$;
 
 create or replace function public.shop_get_state(
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql
@@ -358,7 +358,7 @@ $$;
 
 create or replace function public.shop_get_room_equipped_icons(
   p_room_id uuid,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns table (
   user_id uuid,
@@ -397,7 +397,7 @@ $$;
 
 create or replace function public.shop_purchase_icon(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql
@@ -461,7 +461,7 @@ $$;
 
 create or replace function public.shop_purchase_block_skin(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql
@@ -529,7 +529,7 @@ $$;
 
 create or replace function public.shop_equip_icon(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql
@@ -581,7 +581,7 @@ $$;
 
 create or replace function public.shop_equip_block_skin(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql
@@ -654,7 +654,7 @@ $$;
 create or replace function public.shop_equip_block_skin_slot(
   p_item_id text,
   p_slot_index int,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql
@@ -735,7 +735,7 @@ $$;
 create or replace function public.shop_award_match_coins(
   p_mode text,
   p_won boolean,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql

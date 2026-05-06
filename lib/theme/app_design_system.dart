@@ -1,4 +1,4 @@
-import 'package:link_your_area/theme/app_typography.dart';
+import 'package:crush_block/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

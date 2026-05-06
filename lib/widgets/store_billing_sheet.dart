@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:link_your_area/services/shop_service.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
-import 'package:link_your_area/theme/app_typography.dart';
-import 'package:link_your_area/widgets/brand_assets.dart';
-import 'package:link_your_area/widgets/dialogs/custom_dialog.dart';
+import 'package:crush_block/services/shop_service.dart';
+import 'package:crush_block/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_typography.dart';
+import 'package:crush_block/widgets/brand_assets.dart';
+import 'package:crush_block/widgets/dialogs/custom_dialog.dart';
 
 void showStoreBillingSheet(BuildContext context, ShopService shopService) {
   Get.bottomSheet(

@@ -1,5 +1,5 @@
 -- ============================================================
--- Link Your Area - Shop color slot migration
+-- Crush Block - Shop color slot migration
 -- Existing deployments: run this in Supabase SQL Editor.
 -- ============================================================
 
@@ -174,11 +174,11 @@ update public.user_shop_data
            equipped_block_skin
          )
        )[1]
- where game_key = 'link_your_area';
+ where game_key = 'crush_block';
 
 create or replace function public.shop_purchase_block_skin(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql
@@ -246,7 +246,7 @@ $$;
 
 create or replace function public.shop_equip_block_skin(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql
@@ -317,7 +317,7 @@ $$;
 create or replace function public.shop_equip_block_skin_slot(
   p_item_id text,
   p_slot_index int,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql

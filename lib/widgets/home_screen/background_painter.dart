@@ -1,4 +1,4 @@
-import 'package:link_your_area/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_design_system.dart';
 import 'package:flutter/material.dart';
 
 /// Minimal soft gradient background for the home screen.

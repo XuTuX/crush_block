@@ -2,8 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-String get supabaseUrl => dotenv.env['SUPABASE_URL'] ?? '';
-String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+String get supabaseUrl =>
+    dotenv.env['SUPABASE_URL'] ?? const String.fromEnvironment('SUPABASE_URL');
+String get supabaseAnonKey =>
+    dotenv.env['SUPABASE_ANON_KEY'] ??
+    const String.fromEnvironment('SUPABASE_ANON_KEY');
 const String gameId = 'crush_block';
 const String rankedRatingGameId = '${gameId}_ranked_rating';
 

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_design_system.dart';
 
-const String kAppBrandIconAsset = 'assets/icons/linkyourarea_logo_transparent.png';
+const String kAppBrandIconAsset =
+    'assets/icons/crush_block_logo_transparent.png';
 const String kAreaCoinIconAsset = 'assets/icons/Area_coin.png';
 
 class AppBrandLogo extends StatelessWidget {

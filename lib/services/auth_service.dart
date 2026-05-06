@@ -1,18 +1,18 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:link_your_area/screens/auth_gate_screen.dart';
+import 'package:crush_block/screens/auth_gate_screen.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:get/get.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:link_your_area/config/app_config.dart';
-import 'package:link_your_area/services/database_service.dart';
-import 'package:link_your_area/utils/random_nickname_generator.dart';
-import 'package:link_your_area/services/multiplayer_service.dart';
-import 'package:link_your_area/services/shop_service.dart';
+import 'package:crush_block/config/app_config.dart';
+import 'package:crush_block/services/database_service.dart';
+import 'package:crush_block/utils/random_nickname_generator.dart';
+import 'package:crush_block/services/multiplayer_service.dart';
+import 'package:crush_block/services/shop_service.dart';
 
 class AuthService extends GetxController {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -315,7 +315,8 @@ class AuthService extends GetxController {
       debugPrintStack(stackTrace: st);
       return '이 기기에서는 Apple 로그인을 사용할 수 없어요.';
     } on AuthException catch (e, st) {
-      debugPrint('🔴 [AuthService] Supabase Apple Sign In failed: ${e.message}');
+      debugPrint(
+          '🔴 [AuthService] Supabase Apple Sign In failed: ${e.message}');
       debugPrintStack(stackTrace: st);
       return 'Apple 로그인 설정에 문제가 있어요. 잠시 후 다시 시도해 주세요.';
     } catch (e, st) {

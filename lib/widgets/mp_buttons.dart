@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:link_your_area/theme/app_components.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_components.dart';
+import 'package:crush_block/theme/app_design_system.dart';
 
 class MpPrimaryButton extends StatelessWidget {
   final String label;

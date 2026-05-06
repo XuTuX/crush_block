@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:link_your_area/controllers/tutorial_game_controller.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
-import 'package:link_your_area/theme/app_typography.dart';
-import 'package:link_your_area/widgets/mp_buttons.dart';
+import 'package:crush_block/controllers/tutorial_game_controller.dart';
+import 'package:crush_block/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_typography.dart';
+import 'package:crush_block/widgets/mp_buttons.dart';
 
 class TutorialGameScreen extends StatefulWidget {
   const TutorialGameScreen({super.key});

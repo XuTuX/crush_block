@@ -1,11 +1,11 @@
 -- ============================================================
--- Link Your Area - Multiplayer Room Icon RPC Hotfix
+-- Crush Block - Multiplayer Room Icon RPC Hotfix
 -- Apply in Supabase SQL Editor.
 -- ============================================================
 
 create or replace function public.shop_get_room_equipped_icons(
   p_room_id uuid,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns table (
   user_id uuid,

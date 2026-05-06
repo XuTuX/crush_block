@@ -1,5 +1,5 @@
 -- ============================================================
--- Link Your Area - Character / Portrait shop extension
+-- Crush Block - Character / Portrait shop extension
 -- Apply after shop_schema.sql
 -- ============================================================
 
@@ -273,7 +273,7 @@ set owned_characters = public.shop_normalized_owned_characters(owned_characters)
       owned_portraits,
       owned_characters
     )
-where game_key = 'link_your_area';
+where game_key = 'crush_block';
 
 update public.multiplayer_room_players
 set character_id = public.shop_normalize_character_id(character_id)
@@ -281,7 +281,7 @@ where character_id is null
    or public.shop_normalize_character_id(character_id) is distinct from character_id;
 
 create or replace function public.shop_get_state(
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql
@@ -321,7 +321,7 @@ $$;
 
 create or replace function public.shop_purchase_character(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql
@@ -374,7 +374,7 @@ $$;
 
 create or replace function public.shop_equip_character(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql
@@ -427,7 +427,7 @@ $$;
 
 create or replace function public.shop_purchase_portrait(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql
@@ -483,7 +483,7 @@ $$;
 
 create or replace function public.shop_equip_portrait(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql

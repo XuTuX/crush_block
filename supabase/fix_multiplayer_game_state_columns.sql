@@ -1,5 +1,5 @@
 -- ============================================================
--- Link Your Area - Multiplayer Game State Hotfix
+-- Crush Block - Multiplayer Game State Hotfix
 -- Apply when multiplayer_game_states is missing newer columns.
 -- ============================================================
 

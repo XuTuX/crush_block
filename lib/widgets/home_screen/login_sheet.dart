@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:link_your_area/config/app_config.dart';
-import 'package:link_your_area/theme/app_components.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
-import 'package:link_your_area/theme/app_typography.dart';
+import 'package:crush_block/config/app_config.dart';
+import 'package:crush_block/theme/app_components.dart';
+import 'package:crush_block/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_typography.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LoginSheet extends StatefulWidget {
@@ -155,7 +155,9 @@ class _LoginSheetState extends State<LoginSheet> {
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
         child: _errorMessage == null || _errorMessage!.isEmpty
-            ? (widget.isFullScreen ? const SizedBox.shrink() : const SizedBox(height: AppSpacing.xl))
+            ? (widget.isFullScreen
+                ? const SizedBox.shrink()
+                : const SizedBox(height: AppSpacing.xl))
             : Padding(
                 padding: EdgeInsets.only(
                     top: widget.isFullScreen ? 0 : AppSpacing.md,
@@ -202,9 +204,8 @@ class _LoginSheetState extends State<LoginSheet> {
             fit: BoxFit.contain,
           ),
         ),
-        onPressed: _isLoading
-            ? null
-            : () => _handleSignIn(widget.onGoogleSignIn),
+        onPressed:
+            _isLoading ? null : () => _handleSignIn(widget.onGoogleSignIn),
         isLoading: _isLoading,
       ),
       if (GetPlatform.isIOS) ...[
@@ -216,9 +217,8 @@ class _LoginSheetState extends State<LoginSheet> {
             size: 18,
             color: AppColors.ink,
           ),
-          onPressed: _isLoading
-              ? null
-              : () => _handleSignIn(widget.onAppleSignIn),
+          onPressed:
+              _isLoading ? null : () => _handleSignIn(widget.onAppleSignIn),
         ),
       ],
       const SizedBox(height: AppSpacing.lg),

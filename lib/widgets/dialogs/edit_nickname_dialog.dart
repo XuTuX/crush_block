@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:link_your_area/services/database_service.dart';
-import 'package:link_your_area/theme/app_components.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
-import 'package:link_your_area/theme/app_typography.dart';
-import 'package:link_your_area/utils/random_nickname_generator.dart';
+import 'package:crush_block/services/database_service.dart';
+import 'package:crush_block/theme/app_components.dart';
+import 'package:crush_block/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_typography.dart';
+import 'package:crush_block/utils/random_nickname_generator.dart';
 
 class EditNicknameDialog extends StatefulWidget {
   final String currentNickname;

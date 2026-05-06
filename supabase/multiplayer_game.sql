@@ -1,5 +1,5 @@
 -- ============================================================
--- Link Your Area - Multiplayer Game State Schema
+-- Crush Block - Multiplayer Game State Schema
 -- Apply AFTER multiplayer_mvp.sql in Supabase SQL Editor
 -- ============================================================
 

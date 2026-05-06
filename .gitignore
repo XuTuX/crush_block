@@ -32,6 +32,10 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+game_server/node_modules/
+ios/Pods/
+macos/Pods/
+android/app/src/main/java/io/flutter/plugins/
 
 # Symbolication related
 app.*.symbols

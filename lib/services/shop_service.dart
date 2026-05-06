@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:link_your_area/config/app_config.dart';
-import 'package:link_your_area/services/multiplayer_service.dart';
+import 'package:crush_block/config/app_config.dart';
+import 'package:crush_block/services/multiplayer_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:link_your_area/models/character_item.dart';
-import 'package:link_your_area/models/portrait_item.dart';
+import 'package:crush_block/models/character_item.dart';
+import 'package:crush_block/models/portrait_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

@@ -33,8 +33,8 @@
 - 앱 환경변수
   - `STORE_PURCHASE_VERIFY_FUNCTION`
 - Supabase SQL
-  - `/Users/kik/Documents/ma-neoreo/link_your_area/supabase/shop_schema.sql`
-  - `/Users/kik/Documents/ma-neoreo/link_your_area/supabase/shop_coin_payments.sql`
+  - `/Users/kik/Documents/ma-neoreo/crush_block/supabase/shop_schema.sql`
+  - `/Users/kik/Documents/ma-neoreo/crush_block/supabase/shop_coin_payments.sql`
 
 ## 중요한 점
 

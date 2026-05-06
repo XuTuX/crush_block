@@ -26,7 +26,7 @@ begin
       from public.multiplayer_rooms r
      where r.id = p_room_id
        and r.host_user_id = v_user_id
-       and r.game_key = 'link_your_area'
+       and r.game_key = 'crush_block'
   ) then
     raise exception '현재 방을 넘길 권한이 없습니다.';
   end if;
@@ -38,7 +38,7 @@ begin
         on r.id = p.room_id
      where p.room_id = p_room_id
        and p.user_id = p_new_host_user_id
-       and r.game_key = 'link_your_area'
+       and r.game_key = 'crush_block'
   ) then
     raise exception '새 방 소유자는 같은 방 참가자여야 합니다.';
   end if;
@@ -46,7 +46,7 @@ begin
   update public.multiplayer_rooms
      set host_user_id = p_new_host_user_id
    where id = p_room_id
-     and game_key = 'link_your_area';
+     and game_key = 'crush_block';
 end;
 $$;
 

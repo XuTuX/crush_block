@@ -1,8 +1,8 @@
 -- ============================================================
--- Link Your Area - 멀티플레이어 전체 스키마 (통합 실행 스크립트)
+-- Crush Block - 멀티플레이어 전체 스키마 (통합 실행 스크립트)
 -- Supabase SQL Editor에 복붙해서 실행하세요
 -- 재실행 안전: IF NOT EXISTS / DROP IF EXISTS 사용
--- game_key = 'link_your_area' 로 다른 게임과 분리 관리
+-- game_key = 'crush_block' 로 다른 게임과 분리 관리
 -- ============================================================
 
 -- ============================================================
@@ -11,7 +11,7 @@
 
 create table if not exists public.multiplayer_rooms (
   id          uuid primary key default gen_random_uuid(),
-  game_key    text not null default 'link_your_area',
+  game_key    text not null default 'crush_block',
   room_code   text not null,
   room_title  text not null default '랜덤 방',
   host_user_id uuid not null,
@@ -46,7 +46,7 @@ alter table public.multiplayer_rooms
   add column if not exists game_key text;
 
 update public.multiplayer_rooms
-set game_key = 'link_your_area'
+set game_key = 'crush_block'
 where game_key is null;
 
 alter table public.multiplayer_rooms
@@ -275,19 +275,19 @@ drop policy if exists "rooms_select_authenticated" on public.multiplayer_rooms;
 drop policy if exists "rooms_insert_host" on public.multiplayer_rooms;
 drop policy if exists "rooms_update_host" on public.multiplayer_rooms;
 drop policy if exists "rooms_delete_host" on public.multiplayer_rooms;
-drop policy if exists "rooms_select_link_your_area" on public.multiplayer_rooms;
-drop policy if exists "rooms_insert_link_your_area_host" on public.multiplayer_rooms;
-drop policy if exists "rooms_update_link_your_area_host" on public.multiplayer_rooms;
-drop policy if exists "rooms_delete_link_your_area_host" on public.multiplayer_rooms;
+drop policy if exists "rooms_select_crush_block" on public.multiplayer_rooms;
+drop policy if exists "rooms_insert_crush_block_host" on public.multiplayer_rooms;
+drop policy if exists "rooms_update_crush_block_host" on public.multiplayer_rooms;
+drop policy if exists "rooms_delete_crush_block_host" on public.multiplayer_rooms;
 
 drop policy if exists "players_select_authenticated" on public.multiplayer_room_players;
 drop policy if exists "players_insert_self" on public.multiplayer_room_players;
 drop policy if exists "players_update_self" on public.multiplayer_room_players;
 drop policy if exists "players_delete_self" on public.multiplayer_room_players;
-drop policy if exists "players_select_link_your_area" on public.multiplayer_room_players;
-drop policy if exists "players_insert_link_your_area_self" on public.multiplayer_room_players;
-drop policy if exists "players_update_link_your_area_self" on public.multiplayer_room_players;
-drop policy if exists "players_delete_link_your_area_self" on public.multiplayer_room_players;
+drop policy if exists "players_select_crush_block" on public.multiplayer_room_players;
+drop policy if exists "players_insert_crush_block_self" on public.multiplayer_room_players;
+drop policy if exists "players_update_crush_block_self" on public.multiplayer_room_players;
+drop policy if exists "players_delete_crush_block_self" on public.multiplayer_room_players;
 
 drop policy if exists "gs_select_room_player" on public.multiplayer_game_states;
 drop policy if exists "gs_insert_self" on public.multiplayer_game_states;
@@ -296,30 +296,30 @@ drop policy if exists "gs_delete_self" on public.multiplayer_game_states;
 
 -- ===== ROOMS 정책 =====
 
--- SELECT: 로그인 유저라면 link_your_area 게임의 방 목록 조회 가능
-create policy "rooms_select_link_your_area"
+-- SELECT: 로그인 유저라면 crush_block 게임의 방 목록 조회 가능
+create policy "rooms_select_crush_block"
 on public.multiplayer_rooms
 for select
 using (
   auth.uid() is not null
-  and game_key = 'link_your_area'
+  and game_key = 'crush_block'
 );
 
 -- INSERT: 자기 자신만 호스트로 방 생성 가능
-create policy "rooms_insert_link_your_area_host"
+create policy "rooms_insert_crush_block_host"
 on public.multiplayer_rooms
 for insert
 with check (
   auth.uid() = host_user_id
-  and game_key = 'link_your_area'
+  and game_key = 'crush_block'
 );
 
 -- UPDATE: 방에 참가한 플레이어라면 수정 가능 (턴 전환, 블록 업데이트 등)
-create policy "rooms_update_link_your_area_host"
+create policy "rooms_update_crush_block_host"
 on public.multiplayer_rooms
 for update
 using (
-  game_key = 'link_your_area'
+  game_key = 'crush_block'
   and exists (
     select 1
     from public.multiplayer_room_players p
@@ -328,7 +328,7 @@ using (
   )
 )
 with check (
-  game_key = 'link_your_area'
+  game_key = 'crush_block'
   and exists (
     select 1
     from public.multiplayer_room_players p
@@ -338,12 +338,12 @@ with check (
 );
 
 -- DELETE: 호스트만 자기 방 삭제 가능
-create policy "rooms_delete_link_your_area_host"
+create policy "rooms_delete_crush_block_host"
 on public.multiplayer_rooms
 for delete
 using (
   auth.uid() = host_user_id
-  and game_key = 'link_your_area'
+  and game_key = 'crush_block'
 );
 
 create or replace function public.multiplayer_transfer_room_host(
@@ -371,7 +371,7 @@ begin
       from public.multiplayer_rooms r
      where r.id = p_room_id
        and r.host_user_id = v_user_id
-       and r.game_key = 'link_your_area'
+       and r.game_key = 'crush_block'
   ) then
     raise exception '현재 방을 넘길 권한이 없습니다.';
   end if;
@@ -383,7 +383,7 @@ begin
         on r.id = p.room_id
      where p.room_id = p_room_id
        and p.user_id = p_new_host_user_id
-       and r.game_key = 'link_your_area'
+       and r.game_key = 'crush_block'
   ) then
     raise exception '새 방 소유자는 같은 방 참가자여야 합니다.';
   end if;
@@ -391,7 +391,7 @@ begin
   update public.multiplayer_rooms
      set host_user_id = p_new_host_user_id
    where id = p_room_id
-     and game_key = 'link_your_area';
+     and game_key = 'crush_block';
 end;
 $$;
 
@@ -399,7 +399,7 @@ $$;
 
 create or replace function public.multiplayer_is_room_participant(
   p_room_id uuid,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns boolean
 language sql
@@ -419,19 +419,19 @@ as $$
 $$;
 
 -- SELECT: 같은 방에 속한 플레이어만 조회 가능
-create policy "players_select_link_your_area"
+create policy "players_select_crush_block"
 on public.multiplayer_room_players
 for select
 using (
   public.multiplayer_is_room_participant(
     multiplayer_room_players.room_id,
-    'link_your_area'
+    'crush_block'
   )
 );
 
 create or replace function public.multiplayer_get_room_player_counts(
   p_room_ids uuid[],
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns table (
   room_id uuid,
@@ -465,7 +465,7 @@ end;
 $$;
 
 -- INSERT: 자기 자신만 참가 등록 (waiting 상태 방만)
-create policy "players_insert_link_your_area_self"
+create policy "players_insert_crush_block_self"
 on public.multiplayer_room_players
 for insert
 with check (
@@ -474,13 +474,13 @@ with check (
     select 1
     from public.multiplayer_rooms r
     where r.id = multiplayer_room_players.room_id
-      and r.game_key = 'link_your_area'
+      and r.game_key = 'crush_block'
       and r.status = 'waiting'
   )
 );
 
 -- UPDATE: 자기 row만 수정 가능
-create policy "players_update_link_your_area_self"
+create policy "players_update_crush_block_self"
 on public.multiplayer_room_players
 for update
 using (
@@ -489,7 +489,7 @@ using (
     select 1
     from public.multiplayer_rooms r
     where r.id = multiplayer_room_players.room_id
-      and r.game_key = 'link_your_area'
+      and r.game_key = 'crush_block'
   )
 )
 with check (
@@ -498,12 +498,12 @@ with check (
     select 1
     from public.multiplayer_rooms r
     where r.id = multiplayer_room_players.room_id
-      and r.game_key = 'link_your_area'
+      and r.game_key = 'crush_block'
   )
 );
 
 -- DELETE: 자기 자신만 퇴장 가능
-create policy "players_delete_link_your_area_self"
+create policy "players_delete_crush_block_self"
 on public.multiplayer_room_players
 for delete
 using (
@@ -512,7 +512,7 @@ using (
     select 1
     from public.multiplayer_rooms r
     where r.id = multiplayer_room_players.room_id
-      and r.game_key = 'link_your_area'
+      and r.game_key = 'crush_block'
   )
 );
 
@@ -608,6 +608,6 @@ begin
 end $$;
 
 -- ============================================================
--- 완료! game_key = 'link_your_area' 로 분리 관리됩니다.
+-- 완료! game_key = 'crush_block' 로 분리 관리됩니다.
 -- 다른 게임은 game_key만 다르게 설정하면 동일 테이블 공유 가능
 -- ============================================================

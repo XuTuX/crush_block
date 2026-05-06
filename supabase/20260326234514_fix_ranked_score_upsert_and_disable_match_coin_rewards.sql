@@ -19,7 +19,7 @@ create unique index if not exists ux_scores_user_game
 create or replace function public.shop_award_match_coins(
   p_mode text,
   p_won boolean,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql

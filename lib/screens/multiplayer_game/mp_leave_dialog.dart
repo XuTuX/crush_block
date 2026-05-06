@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:link_your_area/controllers/multiplayer_game_controller.dart';
-import 'package:link_your_area/services/multiplayer_service.dart';
-import 'package:link_your_area/theme/app_components.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
-import 'package:link_your_area/theme/app_typography.dart';
+import 'package:crush_block/controllers/multiplayer_game_controller.dart';
+import 'package:crush_block/services/multiplayer_service.dart';
+import 'package:crush_block/theme/app_components.dart';
+import 'package:crush_block/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_typography.dart';
 
 void showMpLeaveDialog(BuildContext context) {
   Get.dialog(
@@ -73,7 +73,8 @@ void showMpLeaveDialog(BuildContext context) {
                         final mpService = Get.find<MultiplayerService>();
                         // Mark forfeit so overlay doesn't double-apply ranked score
                         if (Get.isRegistered<MultiplayerGameController>()) {
-                          Get.find<MultiplayerGameController>().forfeitHandled = true;
+                          Get.find<MultiplayerGameController>().forfeitHandled =
+                              true;
                         }
                         await mpService.leaveRoom(countAsForfeit: true);
                         Get.back();

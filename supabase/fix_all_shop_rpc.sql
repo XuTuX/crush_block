@@ -1,5 +1,5 @@
 -- ============================================================
--- Link Your Area - Shop RPC Fix
+-- Crush Block - Shop RPC Fix
 -- This drops the conflicting 6-arg shop_state_json function
 -- and updates all shop RPCs to correctly call shop_get_state
 -- to prevent resetting character/portrait data.
@@ -13,7 +13,7 @@ DROP FUNCTION IF EXISTS public.shop_state_json(int, text[], text[], text, text);
 -- 2) Update shop_purchase_icon
 CREATE OR REPLACE FUNCTION public.shop_purchase_icon(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -63,7 +63,7 @@ $$;
 -- 3) Update shop_purchase_block_skin
 CREATE OR REPLACE FUNCTION public.shop_purchase_block_skin(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -117,7 +117,7 @@ $$;
 -- 4) Update shop_equip_icon
 CREATE OR REPLACE FUNCTION public.shop_equip_icon(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -162,7 +162,7 @@ $$;
 -- 5) Update shop_equip_block_skin
 CREATE OR REPLACE FUNCTION public.shop_equip_block_skin(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -226,7 +226,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.shop_equip_block_skin_slot(
   p_item_id text,
   p_slot_index int,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -300,7 +300,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.shop_award_match_coins(
   p_mode text,
   p_won boolean,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -345,7 +345,7 @@ $$;
 
 -- 9) Insert ranked_rating game to games table
 INSERT INTO public.games (id, name, created_at)
-VALUES ('link_your_area_ranked_rating', 'Link Your Area (Ranked)', now())
+VALUES ('crush_block_ranked_rating', 'Crush Block (Ranked)', now())
 ON CONFLICT (id) DO NOTHING;
 
 -- Revoke & Grant permissions for updated functions

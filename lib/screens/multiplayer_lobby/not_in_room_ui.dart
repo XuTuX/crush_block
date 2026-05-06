@@ -1,9 +1,8 @@
-import 'package:link_your_area/services/multiplayer_service.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
-import 'package:link_your_area/theme/app_typography.dart';
+import 'package:crush_block/services/multiplayer_service.dart';
+import 'package:crush_block/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 
 class NotInRoomUi extends StatefulWidget {
   final bool isBusy;
@@ -137,15 +136,18 @@ class _NotInRoomUiState extends State<NotInRoomUi> {
                       ),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.45),
+                disabledBackgroundColor:
+                    AppColors.primary.withValues(alpha: 0.45),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 elevation: 0,
               ).copyWith(
-                shadowColor: WidgetStateProperty.all(AppColors.primary.withValues(alpha: 0.2)),
-                elevation: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.pressed) ? 2 : 4),
+                shadowColor: WidgetStateProperty.all(
+                    AppColors.primary.withValues(alpha: 0.2)),
+                elevation: WidgetStateProperty.resolveWith(
+                    (states) => states.contains(WidgetState.pressed) ? 2 : 4),
               ),
               child: widget.isBusy
                   ? const SizedBox(
@@ -166,7 +168,8 @@ class _NotInRoomUiState extends State<NotInRoomUi> {
                     ),
             ),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(24),
             borderSide: BorderSide.none,

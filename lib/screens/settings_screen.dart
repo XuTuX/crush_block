@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:link_your_area/utils/device_utils.dart';
+import 'package:crush_block/utils/device_utils.dart';
 import 'package:get/get.dart';
-import 'package:link_your_area/services/auth_service.dart';
-import 'package:link_your_area/services/database_service.dart';
-import 'package:link_your_area/services/settings_service.dart';
-import 'package:link_your_area/services/shop_service.dart';
-import 'package:link_your_area/theme/app_components.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
-import 'package:link_your_area/theme/app_typography.dart';
-import 'package:link_your_area/widgets/dialogs/edit_nickname_dialog.dart';
-import 'package:link_your_area/widgets/dialogs/custom_dialog.dart';
-import 'package:link_your_area/widgets/home_screen/login_sheet.dart';
-import 'package:link_your_area/widgets/portrait_avatar.dart';
-import 'package:link_your_area/widgets/tutorial_overlay.dart';
+import 'package:crush_block/services/auth_service.dart';
+import 'package:crush_block/services/database_service.dart';
+import 'package:crush_block/services/settings_service.dart';
+import 'package:crush_block/services/shop_service.dart';
+import 'package:crush_block/theme/app_components.dart';
+import 'package:crush_block/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_typography.dart';
+import 'package:crush_block/widgets/dialogs/edit_nickname_dialog.dart';
+import 'package:crush_block/widgets/dialogs/custom_dialog.dart';
+import 'package:crush_block/widgets/home_screen/login_sheet.dart';
+import 'package:crush_block/widgets/portrait_avatar.dart';
+import 'package:crush_block/widgets/tutorial_overlay.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -51,7 +51,8 @@ class SettingsScreen extends StatelessWidget {
             Expanded(
               child: Center(
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: DeviceUtils.isTablet(context) ? 680 : 560),
+                  constraints: BoxConstraints(
+                      maxWidth: DeviceUtils.isTablet(context) ? 680 : 560),
                   child: Obx(() {
                     final user = authService.user.value;
                     final savedNickname = authService.userNickname.value;
@@ -97,7 +98,8 @@ class SettingsScreen extends StatelessWidget {
                                 icon: Icons.badge_outlined,
                                 title: '닉네임 수정',
                                 subtitle: '매치와 랭킹에 표시될 이름',
-                                trailing: const Icon(Icons.chevron_right_rounded,
+                                trailing: const Icon(
+                                    Icons.chevron_right_rounded,
                                     color: AppColors.textSubtle),
                                 onTap: user != null
                                     ? () => _showEditNicknameDialog(
@@ -125,7 +127,8 @@ class SettingsScreen extends StatelessWidget {
                                 icon: Icons.help_outline_rounded,
                                 title: '게임 튜토리얼',
                                 subtitle: '다시 보며 규칙 익히기',
-                                trailing: const Icon(Icons.chevron_right_rounded,
+                                trailing: const Icon(
+                                    Icons.chevron_right_rounded,
                                     color: AppColors.textSubtle),
                                 onTap: () => showTutorial(context,
                                     onComplete: () =>

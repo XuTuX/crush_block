@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:link_your_area/utils/device_utils.dart';
+import 'package:crush_block/utils/device_utils.dart';
 import 'package:get/get.dart';
-import 'package:link_your_area/constant.dart';
-import 'package:link_your_area/services/auth_service.dart';
-import 'package:link_your_area/services/database_service.dart';
-import 'package:link_your_area/theme/app_components.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
-import 'package:link_your_area/theme/app_typography.dart';
+import 'package:crush_block/constant.dart';
+import 'package:crush_block/services/auth_service.dart';
+import 'package:crush_block/services/database_service.dart';
+import 'package:crush_block/theme/app_components.dart';
+import 'package:crush_block/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_typography.dart';
 
 class RankingScreen extends StatefulWidget {
   const RankingScreen({super.key});

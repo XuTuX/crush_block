@@ -1,28 +1,28 @@
 import 'dart:async';
 
-import 'package:link_your_area/utils/device_utils.dart';
+import 'package:crush_block/utils/device_utils.dart';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:link_your_area/screens/multiplayer_game_screen.dart';
-import 'package:link_your_area/screens/multiplayer_lobby_screen.dart';
-import 'package:link_your_area/screens/ranking_screen.dart';
-import 'package:link_your_area/screens/settings_screen.dart';
-import 'package:link_your_area/screens/shop_screen.dart';
-import 'package:link_your_area/services/auth_service.dart';
-import 'package:link_your_area/services/database_service.dart';
-import 'package:link_your_area/services/multiplayer_service.dart';
-import 'package:link_your_area/services/shop_service.dart';
-import 'package:link_your_area/theme/app_components.dart';
-import 'package:link_your_area/widgets/home_screen/background_painter.dart';
-import 'package:link_your_area/widgets/home_screen/home_components.dart';
-import 'package:link_your_area/widgets/home_screen/login_sheet.dart';
-import 'package:link_your_area/widgets/tutorial_overlay.dart';
-import 'package:link_your_area/services/settings_service.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
-import 'package:link_your_area/theme/app_typography.dart';
-import 'package:link_your_area/widgets/dialogs/edit_nickname_dialog.dart';
-import 'package:link_your_area/widgets/match_found_overlay.dart';
+import 'package:crush_block/screens/multiplayer_game_screen.dart';
+import 'package:crush_block/screens/multiplayer_lobby_screen.dart';
+import 'package:crush_block/screens/ranking_screen.dart';
+import 'package:crush_block/screens/settings_screen.dart';
+import 'package:crush_block/screens/shop_screen.dart';
+import 'package:crush_block/services/auth_service.dart';
+import 'package:crush_block/services/database_service.dart';
+import 'package:crush_block/services/multiplayer_service.dart';
+import 'package:crush_block/services/shop_service.dart';
+import 'package:crush_block/theme/app_components.dart';
+import 'package:crush_block/widgets/home_screen/background_painter.dart';
+import 'package:crush_block/widgets/home_screen/home_components.dart';
+import 'package:crush_block/widgets/home_screen/login_sheet.dart';
+import 'package:crush_block/widgets/tutorial_overlay.dart';
+import 'package:crush_block/services/settings_service.dart';
+import 'package:crush_block/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_typography.dart';
+import 'package:crush_block/widgets/dialogs/edit_nickname_dialog.dart';
+import 'package:crush_block/widgets/match_found_overlay.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomeScreen extends StatefulWidget {

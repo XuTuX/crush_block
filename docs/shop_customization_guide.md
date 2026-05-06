@@ -8,13 +8,13 @@
 
 먼저 제작하신 이미지 파일들을 다음 폴더 규칙에 맞춰 프로젝트에 배치합니다.
 
-*   **초상화(Portrait):** [assets/portraits/](file:///Users/nomang/Documents/ma_neoreo/link_your_area/assets/portraits/)
+*   **초상화(Portrait):** [assets/portraits/](file:///Users/nomang/Documents/ma_neoreo/crush_block/assets/portraits/)
     *   용도: 상점 리스트, 본인 프로필, 로그인 화면 등에 표시될 얼굴 이미지
     *   규격: **1:1(정사각형) 비율**, 배경 투명 PNG 권장
-*   **게임 말(Token):** [assets/tokens/](file:///Users/nomang/Documents/ma_neoreo/link_your_area/assets/tokens/)
+*   **게임 말(Token):** [assets/tokens/](file:///Users/nomang/Documents/ma_neoreo/crush_block/assets/tokens/)
     *   용도: 게임 보드 위에서 실제로 움직일 캐릭터 스킨
     *   규격: 배경 투명 PNG 권장
-*   **기타 아이콘:** [assets/icons/](file:///Users/nomang/Documents/ma_neoreo/link_your_area/assets/icons/)
+*   **기타 아이콘:** [assets/icons/](file:///Users/nomang/Documents/ma_neoreo/crush_block/assets/icons/)
 
 > [!TIP]
 > 파일명은 `knight_portrait.png`, `knight_token.png` 처럼 **ID_구분.png** 형식을 사용하면 관리하기가 매우 수월합니다.
@@ -23,7 +23,7 @@
 
 ## 2단계: Flutter 코드 수정
 
-상점의 데이터 정의는 [lib/services/shop_service.dart](file:///Users/nomang/Documents/ma_neoreo/link_your_area/lib/services/shop_service.dart) 파일에서 관리합니다.
+상점의 데이터 정의는 [lib/services/shop_service.dart](file:///Users/nomang/Documents/ma_neoreo/crush_block/lib/services/shop_service.dart) 파일에서 관리합니다.
 
 ### 1. 캐릭터 카탈로그 수정
 `characterCatalog` 리스트를 본인의 아이템으로 교체하거나 추가합니다.
@@ -61,7 +61,7 @@ static const List<PortraitItem> portraitCatalog = [
 
 ## 3단계: Supabase 데이터베이스 수정
 
-클라이언트 코드만 수정하면 서버에서 소유권 확인이나 가격 계산 시 오류가 발생할 수 있습니다. [supabase/shop_character_portraits.sql](file:///Users/nomang/Documents/ma_neoreo/link_your_area/supabase/shop_character_portraits.sql) 파일을 수정하여 새로운 ID를 등록해야 합니다.
+클라이언트 코드만 수정하면 서버에서 소유권 확인이나 가격 계산 시 오류가 발생할 수 있습니다. [supabase/shop_character_portraits.sql](file:///Users/nomang/Documents/ma_neoreo/crush_block/supabase/shop_character_portraits.sql) 파일을 수정하여 새로운 ID를 등록해야 합니다.
 
 ### 1. 가격 정보 등록
 `shop_character_price` 함수와 `shop_portrait_price` 함수의 `case` 문에 새 ID와 가격을 추가합니다.

@@ -1,10 +1,10 @@
-import 'package:link_your_area/services/database_service.dart';
-import 'package:link_your_area/services/multiplayer_service.dart';
-import 'package:link_your_area/services/shop_service.dart';
-import 'package:link_your_area/theme/app_components.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
-import 'package:link_your_area/theme/app_typography.dart';
-import 'package:link_your_area/widgets/portrait_avatar.dart';
+import 'package:crush_block/services/database_service.dart';
+import 'package:crush_block/services/multiplayer_service.dart';
+import 'package:crush_block/services/shop_service.dart';
+import 'package:crush_block/theme/app_components.dart';
+import 'package:crush_block/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_typography.dart';
+import 'package:crush_block/widgets/portrait_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -118,7 +118,8 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
     debugPrint('🏆 _applyRankResult: won=$won, mode=${widget.mode}');
     final dbService = Get.find<DatabaseService>();
     final result = await dbService.applyRankedMatchResult(won);
-    debugPrint('🏆 RankResult: before=${result.beforePoints}, after=${result.afterPoints}, delta=${result.delta}');
+    debugPrint(
+        '🏆 RankResult: before=${result.beforePoints}, after=${result.afterPoints}, delta=${result.delta}');
     if (!mounted) return;
     setState(() {
       _rankResult = result;
@@ -130,7 +131,8 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
     _resultProcessingStarted = true;
 
     final won = widget.controller.iWon.value;
-    debugPrint('🏆 _handleGameFinished: iWon=$won, isRanked=${widget.mode.isRanked}');
+    debugPrint(
+        '🏆 _handleGameFinished: iWon=$won, isRanked=${widget.mode.isRanked}');
 
     await _markRoomFinished();
     if (widget.mode.isRanked) {
@@ -317,7 +319,8 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
             borderRadius: BorderRadius.circular(16),
           ),
           child: TweenAnimationBuilder<int>(
-            tween: IntTween(begin: result.beforePoints, end: result.afterPoints),
+            tween:
+                IntTween(begin: result.beforePoints, end: result.afterPoints),
             duration: const Duration(milliseconds: 1000),
             curve: Curves.easeOutCubic,
             builder: (context, value, child) {

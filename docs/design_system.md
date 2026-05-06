@@ -1,4 +1,4 @@
-# link_your_area Mobile UI System
+# crush_block Mobile UI System
 
 ## Direction
 
@@ -11,7 +11,7 @@ The app uses one soft, minimal product language across home, login, settings, ra
 
 ## Core Tokens
 
-Implemented in [lib/theme/app_design_system.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/theme/app_design_system.dart) and [lib/theme/app_typography.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/theme/app_typography.dart).
+Implemented in [lib/theme/app_design_system.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/theme/app_design_system.dart) and [lib/theme/app_typography.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/theme/app_typography.dart).
 
 ### Colors
 
@@ -103,7 +103,7 @@ Rules:
 
 ## Shared Components
 
-Implemented in [lib/theme/app_components.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/theme/app_components.dart).
+Implemented in [lib/theme/app_components.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/theme/app_components.dart).
 
 - `AppSurface`: default card/container surface
 - `AppActionButton`: primary, secondary, destructive buttons
@@ -125,7 +125,7 @@ Component rules:
 
 ### Home
 
-Defined in [lib/screens/home_screen.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/screens/home_screen.dart).
+Defined in [lib/screens/home_screen.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/screens/home_screen.dart).
 
 - Soft background wash
 - Elevated hero card for ranked play
@@ -134,7 +134,7 @@ Defined in [lib/screens/home_screen.dart](/Users/kik/Documents/ma-neoreo/link_yo
 
 ### Login
 
-Defined in [lib/screens/auth_gate_screen.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/screens/auth_gate_screen.dart) and [lib/widgets/home_screen/login_sheet.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/widgets/home_screen/login_sheet.dart).
+Defined in [lib/screens/auth_gate_screen.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/screens/auth_gate_screen.dart) and [lib/widgets/home_screen/login_sheet.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/widgets/home_screen/login_sheet.dart).
 
 - One onboarding card on the page
 - Same modal surface for the login sheet
@@ -142,7 +142,7 @@ Defined in [lib/screens/auth_gate_screen.dart](/Users/kik/Documents/ma-neoreo/li
 
 ### Settings
 
-Defined in [lib/screens/settings_screen.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/screens/settings_screen.dart).
+Defined in [lib/screens/settings_screen.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/screens/settings_screen.dart).
 
 - Shared screen header
 - Reused section headers and list rows
@@ -152,10 +152,10 @@ Defined in [lib/screens/settings_screen.dart](/Users/kik/Documents/ma-neoreo/lin
 
 Defined in:
 
-- [lib/widgets/dialogs/custom_dialog.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/widgets/dialogs/custom_dialog.dart)
-- [lib/widgets/dialogs/edit_nickname_dialog.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/widgets/dialogs/edit_nickname_dialog.dart)
-- [lib/screens/multiplayer_game/mp_leave_dialog.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/screens/multiplayer_game/mp_leave_dialog.dart)
-- [lib/screens/ranking_screen.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/screens/ranking_screen.dart)
+- [lib/widgets/dialogs/custom_dialog.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/widgets/dialogs/custom_dialog.dart)
+- [lib/widgets/dialogs/edit_nickname_dialog.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/widgets/dialogs/edit_nickname_dialog.dart)
+- [lib/screens/multiplayer_game/mp_leave_dialog.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/screens/multiplayer_game/mp_leave_dialog.dart)
+- [lib/screens/ranking_screen.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/screens/ranking_screen.dart)
 
 - Same overlay
 - Same elevated surface

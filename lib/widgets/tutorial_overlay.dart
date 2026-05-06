@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:link_your_area/screens/tutorial_game_screen.dart';
+import 'package:crush_block/screens/tutorial_game_screen.dart';
 
 void showTutorial(
   BuildContext context, {

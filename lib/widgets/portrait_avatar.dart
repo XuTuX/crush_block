@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_design_system.dart';
 
 class PortraitAvatar extends StatelessWidget {
   final String? assetPath;

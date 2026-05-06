@@ -1,5 +1,5 @@
 -- ============================================================
--- Link Your Area - Store Purchase Schema
+-- Crush Block - Store Purchase Schema
 -- 코인 충전은 App Store / Google Play 인앱결제로 처리한다.
 -- 앱은 구매를 시작만 하고, 영수증 검증과 코인 적립은 서버만 수행한다.
 -- ============================================================
@@ -7,7 +7,7 @@
 create table if not exists public.user_store_purchases (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
-  game_key text not null default 'link_your_area',
+  game_key text not null default 'crush_block',
   store text not null check (store in ('app_store', 'google_play')),
   product_id text not null,
   purchase_id text,
@@ -30,7 +30,7 @@ on public.user_store_purchases
 for select
 using (
   auth.uid() = user_id
-  and game_key = 'link_your_area'
+  and game_key = 'crush_block'
 );
 
 create or replace function public.shop_store_product_coin_amount(p_product_id text)
@@ -53,7 +53,7 @@ create or replace function public.shop_grant_store_purchase(
   p_purchase_token text,
   p_purchase_id text default null,
   p_transaction_date timestamptz default null,
-  p_game_key text default 'link_your_area',
+  p_game_key text default 'crush_block',
   p_raw_payload jsonb default '{}'::jsonb
 )
 returns jsonb

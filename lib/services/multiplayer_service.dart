@@ -22,6 +22,7 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
   static const String defaultServerUrl = 'http://localhost:3001';
 
   final ShopService _shopService = Get.find<ShopService>();
+  bool _availabilitySubscriptionActive = false;
 
   final isBusy = false.obs;
   final errorMessage = RxnString();
@@ -169,10 +170,16 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
   }
 
   void startAvailableRoomsSubscription() {
-    fetchAvailableRooms();
+    _availabilitySubscriptionActive = true;
+    unawaited(fetchAvailableRooms());
   }
 
-  void stopAvailableRoomsSubscription() {}
+  void stopAvailableRoomsSubscription() {
+    _availabilitySubscriptionActive = false;
+    if (currentRoomId.value == null && !isMatchmakingActive.value) {
+      socket?.disconnect();
+    }
+  }
 
   void resetOnLogout() {
     leaveRoom();
@@ -186,9 +193,11 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _ensureConnected();
-      refreshRoomPlayers();
-      fetchAvailableRooms();
+      if (_shouldKeepSocketWarm) {
+        _ensureConnected();
+        refreshRoomPlayers();
+        fetchAvailableRooms();
+      }
     }
   }
 
@@ -241,8 +250,12 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
       if (data is! Map) return;
       _applyUiMutation(() => _applyRoomState(Map<String, dynamic>.from(data)));
     });
+  }
 
-    socket?.connect();
+  bool get _shouldKeepSocketWarm {
+    return _availabilitySubscriptionActive ||
+        currentRoomId.value != null ||
+        isMatchmakingActive.value;
   }
 
   void _ensureConnected() {
@@ -310,7 +323,12 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
     players.clear();
     board.clear();
     walls.clear();
-    fetchAvailableRooms();
+    if (_availabilitySubscriptionActive) {
+      unawaited(fetchAvailableRooms());
+    } else {
+      availableRooms.clear();
+      isFetchingRooms.value = false;
+    }
   }
 
   void _applyUiMutation(VoidCallback mutation) {

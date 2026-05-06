@@ -1,11 +1,11 @@
-import 'package:link_your_area/constant.dart';
-import 'package:link_your_area/screens/auth_gate_screen.dart';
-import 'package:link_your_area/services/auth_service.dart';
-import 'package:link_your_area/services/database_service.dart';
-import 'package:link_your_area/services/settings_service.dart';
-import 'package:link_your_area/services/multiplayer_service.dart';
-import 'package:link_your_area/services/shop_service.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
+import 'package:crush_block/constant.dart';
+import 'package:crush_block/screens/auth_gate_screen.dart';
+import 'package:crush_block/services/auth_service.dart';
+import 'package:crush_block/services/database_service.dart';
+import 'package:crush_block/services/settings_service.dart';
+import 'package:crush_block/services/multiplayer_service.dart';
+import 'package:crush_block/services/shop_service.dart';
+import 'package:crush_block/theme/app_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -14,7 +14,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: ".env", isOptional: true);
+
+  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+    runApp(const MissingConfigApp());
+    return;
+  }
 
   await Supabase.initialize(
     url: supabaseUrl,
@@ -46,6 +51,28 @@ class AppBinding extends Bindings {
     Get.put(DatabaseService(), permanent: true);
     Get.put(MultiplayerService(), permanent: true);
     Get.put(AuthService(), permanent: true);
+  }
+}
+
+class MissingConfigApp extends StatelessWidget {
+  const MissingConfigApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              'Supabase 설정이 필요합니다.\n.env 파일을 추가하거나 --dart-define으로 SUPABASE_URL과 SUPABASE_ANON_KEY를 전달해주세요.',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

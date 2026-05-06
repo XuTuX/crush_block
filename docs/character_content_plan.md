@@ -92,7 +92,7 @@
 
 ### 1. 상점 데이터 구조 확장
 
-현재 [lib/services/shop_service.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/services/shop_service.dart)는 `IconData`와 `Color` 중심이다.  
+현재 [lib/services/shop_service.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/services/shop_service.dart)는 `IconData`와 `Color` 중심이다.  
 캐릭터 기반으로 가려면 `asset path`를 저장하는 구조가 필요하다.
 
 추천 필드:
@@ -110,7 +110,7 @@
 
 ### 2. 블록 렌더링 구조 교체
 
-현재 [lib/tetris.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/tetris.dart)는 단색 사각형만 그린다.  
+현재 [lib/tetris.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/tetris.dart)는 단색 사각형만 그린다.  
 여기를 바꿔야 캐릭터 느낌이 제대로 난다.
 
 추천 방식:
@@ -124,7 +124,7 @@
 
 ### 3. 보드 셀 상태 표현 분리
 
-현재 [lib/screens/multiplayer_game/multiplayer_board.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/screens/multiplayer_game/multiplayer_board.dart)는 셀을 거의 `색상`으로만 표현한다.  
+현재 [lib/screens/multiplayer_game/multiplayer_board.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/screens/multiplayer_game/multiplayer_board.dart)는 셀을 거의 `색상`으로만 표현한다.  
 캐릭터 기반으로 바꾸면 표현 레이어를 나눠야 한다.
 
 추천 레이어:
@@ -136,7 +136,7 @@
 
 ### 4. 드래그 프리뷰 교체
 
-현재 [lib/screens/multiplayer_game/multiplayer_draggable_block.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/screens/multiplayer_game/multiplayer_draggable_block.dart)는 작은 컬러 블록 미리보기다.  
+현재 [lib/screens/multiplayer_game/multiplayer_draggable_block.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/screens/multiplayer_game/multiplayer_draggable_block.dart)는 작은 컬러 블록 미리보기다.  
 여기는 `캐릭터 편성 카드`처럼 보여야 한다.
 
 추천 표현:
@@ -360,7 +360,7 @@ MVP 추천:
 
 ## 에셋 폴더 구조 제안
 
-현재는 [pubspec.yaml](/Users/kik/Documents/ma-neoreo/link_your_area/pubspec.yaml) 에 `assets/icons/`만 등록돼 있다.  
+현재는 [pubspec.yaml](/Users/kik/Documents/ma-neoreo/crush_block/pubspec.yaml) 에 `assets/icons/`만 등록돼 있다.  
 캐릭터 작업을 시작하면 아래 구조로 정리하는 게 무난하다.
 
 ```text
@@ -454,7 +454,7 @@ emotes/
 
 ## 코드 연결 기준 데이터 모델 예시
 
-현재 [lib/services/shop_service.dart](/Users/kik/Documents/ma-neoreo/link_your_area/lib/services/shop_service.dart)는 `IconData` 위주라서 이후에는 이런 식의 모델이 필요하다.
+현재 [lib/services/shop_service.dart](/Users/kik/Documents/ma-neoreo/crush_block/lib/services/shop_service.dart)는 `IconData` 위주라서 이후에는 이런 식의 모델이 필요하다.
 
 ```dart
 class CharacterItem {

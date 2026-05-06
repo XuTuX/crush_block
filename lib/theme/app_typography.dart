@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:link_your_area/constant.dart';
+import 'package:crush_block/constant.dart';
 
-/// Unified typography system for link_your_area.
+/// Unified typography system for Crush Block.
 ///
 /// Hierarchy:
 ///   display  (36) → Hero title only

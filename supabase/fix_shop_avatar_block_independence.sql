@@ -1,5 +1,5 @@
 -- ============================================================
--- Link Your Area - Avatar / Block independence fix
+-- Crush Block - Avatar / Block independence fix
 -- Allows portrait (avatar) selection independently from block character.
 -- Apply in Supabase SQL Editor for existing projects.
 -- ============================================================
@@ -57,7 +57,7 @@ $$;
 
 create or replace function public.shop_equip_character(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql
@@ -100,7 +100,7 @@ $$;
 
 create or replace function public.shop_purchase_portrait(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql
@@ -157,7 +157,7 @@ $$;
 
 create or replace function public.shop_equip_portrait(
   p_item_id text,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns jsonb
 language plpgsql

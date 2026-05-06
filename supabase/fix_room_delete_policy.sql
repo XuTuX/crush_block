@@ -4,15 +4,15 @@
 -- ============================================================
 
 -- Drop old delete policy
-drop policy if exists "rooms_delete_link_your_area_host" on public.multiplayer_rooms;
+drop policy if exists "rooms_delete_crush_block_host" on public.multiplayer_rooms;
 
 -- New DELETE policy: host can always delete their room,
 -- OR any participant can delete a room if it has 0-1 players (cleanup scenario)
-create policy "rooms_delete_link_your_area_host"
+create policy "rooms_delete_crush_block_host"
 on public.multiplayer_rooms
 for delete
 using (
-  game_key = 'link_your_area'
+  game_key = 'crush_block'
   and (
     -- Host can always delete
     auth.uid() = host_user_id

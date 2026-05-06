@@ -4,7 +4,7 @@
 
 create or replace function public.multiplayer_is_room_participant(
   p_room_id uuid,
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns boolean
 language sql
@@ -23,22 +23,22 @@ as $$
     );
 $$;
 
-drop policy if exists "players_select_link_your_area"
+drop policy if exists "players_select_crush_block"
 on public.multiplayer_room_players;
 
-create policy "players_select_link_your_area"
+create policy "players_select_crush_block"
 on public.multiplayer_room_players
 for select
 using (
   public.multiplayer_is_room_participant(
     multiplayer_room_players.room_id,
-    'link_your_area'
+    'crush_block'
   )
 );
 
 create or replace function public.multiplayer_get_room_player_counts(
   p_room_ids uuid[],
-  p_game_key text default 'link_your_area'
+  p_game_key text default 'crush_block'
 )
 returns table (
   room_id uuid,

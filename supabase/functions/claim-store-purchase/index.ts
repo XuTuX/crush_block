@@ -276,7 +276,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json() as PurchaseRequest;
     const productId = body.product_id?.trim();
-    const gameKey = body.game_key?.trim() || "link_your_area";
+    const gameKey = body.game_key?.trim() || "crush_block";
     const verificationData = body.verification_data ?? {};
 
     if (!productId) {

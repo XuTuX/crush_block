@@ -1,13 +1,13 @@
-import 'package:link_your_area/models/portrait_item.dart';
-import 'package:link_your_area/services/shop_service.dart';
-import 'package:link_your_area/models/character_item.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
-import 'package:link_your_area/theme/app_typography.dart';
-import 'package:link_your_area/utils/device_utils.dart';
-import 'package:link_your_area/widgets/brand_assets.dart';
-import 'package:link_your_area/widgets/dialogs/custom_dialog.dart';
-import 'package:link_your_area/widgets/home_screen/background_painter.dart';
-import 'package:link_your_area/widgets/store_billing_sheet.dart';
+import 'package:crush_block/models/portrait_item.dart';
+import 'package:crush_block/services/shop_service.dart';
+import 'package:crush_block/models/character_item.dart';
+import 'package:crush_block/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_typography.dart';
+import 'package:crush_block/utils/device_utils.dart';
+import 'package:crush_block/widgets/brand_assets.dart';
+import 'package:crush_block/widgets/dialogs/custom_dialog.dart';
+import 'package:crush_block/widgets/home_screen/background_painter.dart';
+import 'package:crush_block/widgets/store_billing_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 

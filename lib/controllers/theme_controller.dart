@@ -1,4 +1,4 @@
-import 'package:link_your_area/constant.dart';
+import 'package:crush_block/constant.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:link_your_area/services/auth_service.dart';
-import 'package:link_your_area/services/database_service.dart';
-import 'package:link_your_area/services/shop_service.dart';
-import 'package:link_your_area/theme/app_components.dart';
-import 'package:link_your_area/theme/app_design_system.dart';
-import 'package:link_your_area/theme/app_typography.dart';
-import 'package:link_your_area/widgets/brand_assets.dart';
-import 'package:link_your_area/widgets/portrait_avatar.dart';
+import 'package:crush_block/services/auth_service.dart';
+import 'package:crush_block/services/database_service.dart';
+import 'package:crush_block/services/shop_service.dart';
+import 'package:crush_block/theme/app_components.dart';
+import 'package:crush_block/theme/app_design_system.dart';
+import 'package:crush_block/theme/app_typography.dart';
+import 'package:crush_block/widgets/brand_assets.dart';
+import 'package:crush_block/widgets/portrait_avatar.dart';
 
 class HomeLogo extends StatelessWidget {
   const HomeLogo({super.key});
@@ -73,7 +73,8 @@ class NicknameCard extends StatelessWidget {
                       fit: BoxFit.contain,
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.md), // Changed spacing from sm to md
+                  const SizedBox(
+                      width: AppSpacing.md), // Changed spacing from sm to md
                   Flexible(
                     child: Text(
                       nickname,
@@ -191,7 +192,8 @@ class RankProgressStrip extends StatelessWidget {
             children: [
               if (!summary.isMaxGrade && summary.nextGradeLabel != null) ...[
                 Image.asset(
-                  DatabaseService.gradeIconPathForLabel(summary.nextGradeLabel!),
+                  DatabaseService.gradeIconPathForLabel(
+                      summary.nextGradeLabel!),
                   width: 18,
                   height: 18,
                 ),

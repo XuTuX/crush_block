@@ -1,5 +1,5 @@
 -- ============================================================
--- Link Your Area - Byo-yomi Timer Support
+-- Crush Block - Byo-yomi Timer Support
 -- Add main time and byoyomi columns to multiplayer_game_states.
 -- ============================================================
 

@@ -1,4 +1,3 @@
-
 class PortraitItem {
   final String id;
   final String characterId;
