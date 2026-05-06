@@ -1,0 +1,119 @@
+--- /Users/kik/Documents/ma-neoreo/link_your_area/lib/screens/multiplayer_lobby/not_in_room_ui.dart
++++ /Users/kik/Documents/ma-neoreo/link_your_area/lib/screens/multiplayer_lobby/not_in_room_ui.dart
+@@ -7,22 +7,41 @@
+ import 'package:get/get.dart';
+ import 'package:google_fonts/google_fonts.dart';
+ 
+-class NotInRoomUi extends StatelessWidget {
++class NotInRoomUi extends StatefulWidget {
+   final bool isBusy;
+ 
+   const NotInRoomUi({
+     super.key,
+     required this.isBusy,
+   });
++
++  @override
++  State<NotInRoomUi> createState() => _NotInRoomUiState();
++}
++
++class _NotInRoomUiState extends State<NotInRoomUi> {
++  final TextEditingController _codeController = TextEditingController();
++
++  @override
++  void dispose() {
++    _codeController.dispose();
++    super.dispose();
++  }
+ 
+   @override
+   Widget build(BuildContext context) {
+     return _buildFriendlyUi();
+   }
+ 
+   MultiplayerService get _service => Get.find<MultiplayerService>();
+ 
+   Widget _buildFriendlyUi() {
+     return Column(
+       crossAxisAlignment: CrossAxisAlignment.stretch,
+       children: [
+         _CleanActionButton(
+           label: '방 만들기',
+           icon: Icons.add_rounded,
+           isPrimary: true,
+-          onPressed: isBusy ? null : _service.createRoom,
+-          isLoading: isBusy,
++          onPressed: widget.isBusy ? null : _service.createRoom,
++          isLoading: widget.isBusy,
+         ),
+-        const SizedBox(height: 24),
++        const SizedBox(height: 12),
++        _buildCodeEntryField(),
++        const SizedBox(height: 24),
+         Row(
+           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+@@ -70,6 +89,33 @@
+       ],
+     );
+   }
++
++  Widget _buildCodeEntryField() {
++    return Row(
++      children: [
++        Expanded(
++          child: TextField(
++            controller: _codeController,
++            decoration: InputDecoration(
++              hintText: '오른쪽 버튼으로 코드 붙여넣기 ➡️',
++              hintStyle: AppTypography.body.copyWith(color: AppColors.textMuted),
++              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
++              border: OutlineInputBorder(
++                borderRadius: BorderRadius.circular(AppRadius.md),
++                borderSide: BorderSide(color: AppColors.borderSoft),
++              ),
++              enabledBorder: OutlineInputBorder(
++                borderRadius: BorderRadius.circular(AppRadius.md),
++                borderSide: BorderSide(color: AppColors.borderSoft),
++              ),
++              focusedBorder: OutlineInputBorder(
++                borderRadius: BorderRadius.circular(AppRadius.md),
++                borderSide: const BorderSide(color: AppColors.ink),
++              ),
++              filled: true,
++              fillColor: AppColors.surface,
++            ),
++            style: GoogleFonts.blackHanSans(
++              color: AppColors.ink,
++              letterSpacing: 1.5,
++            ),
++            onSubmitted: (val) {
++              if (val.trim().isNotEmpty && !widget.isBusy) {
++                _service.joinRoomByCode(val.trim());
++              }
++            },
++          ),
++        ),
++        const SizedBox(width: 8),
++        SizedBox(
++          width: 56,
++          height: 54,
++          child: _CleanActionButton(
++            label: '',
++            icon: Icons.login_rounded,
++            isPrimary: false,
++            onPressed: widget.isBusy
++                ? null
++                : () {
++                    final code = _codeController.text.trim();
++                    if (code.isNotEmpty) {
++                      _service.joinRoomByCode(code);
++                    } else {
++                      _service.errorMessage.value = '방 코드를 입력해주세요.';
++                    }
++                  },
++            isLoading: widget.isBusy,
++          ),
++        ),
++      ],
++    );
++  }

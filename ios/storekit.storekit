@@ -1,0 +1,87 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "ABE151F3",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "1.99",
+      "familyShareable" : false,
+      "internalID" : "6761326635",
+      "localizations" : [
+        {
+          "description" : "상점에서 구매할 수 있는 코인 500개",
+          "displayName" : "500 coin",
+          "locale" : "ko"
+        }
+      ],
+      "productID" : "500_coin",
+      "referenceName" : "com.neoreo.linkyourarea.500_coin",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "6761326636",
+      "localizations" : [
+        {
+          "description" : "상점에서 구매할 수 있는 코인 1200개",
+          "displayName" : "1200 coin",
+          "locale" : "ko"
+        }
+      ],
+      "productID" : "1200_coin",
+      "referenceName" : "com.neoreo.linkyourarea.1200_coin",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "9.99",
+      "familyShareable" : false,
+      "internalID" : "6761326637",
+      "localizations" : [
+        {
+          "description" : "상점에서 구매할 수 있는 코인 2500개",
+          "displayName" : "2500 coin",
+          "locale" : "ko"
+        }
+      ],
+      "productID" : "2500_coin",
+      "referenceName" : "com.neoreo.linkyourarea.2500_coin",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6761185871",
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_developerTeamID" : "9NGNPGK8GL",
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 796558564.09009397,
+    "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 5,
+    "minor" : 0
+  }
+}
