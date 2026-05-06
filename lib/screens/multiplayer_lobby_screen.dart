@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:crush_block/services/auth_service.dart';
 import 'package:crush_block/services/multiplayer_service.dart';
 import 'package:crush_block/services/shop_service.dart';
 import 'package:crush_block/screens/multiplayer_game_screen.dart';
@@ -72,7 +72,7 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
 
     try {
       final roomId = _service.currentRoomId.value;
-      final myUserId = Supabase.instance.client.auth.currentUser?.id;
+      final myUserId = Get.find<AuthService>().user.value?.id;
 
       if (roomId == null || myUserId == null) {
         _navigatedToGame = false;

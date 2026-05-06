@@ -8,8 +8,6 @@ import 'package:crush_block/widgets/portrait_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../../controllers/multiplayer_game_controller.dart';
 
 class MpGameOverOverlay extends StatefulWidget {
@@ -38,7 +36,6 @@ class MpGameOverOverlay extends StatefulWidget {
 
 class _MpGameOverOverlayState extends State<MpGameOverOverlay>
     with SingleTickerProviderStateMixin {
-  bool _roomMarkedFinished = false;
   bool _rankApplied = false;
   bool _resultProcessingStarted = false;
   RankedMatchResult? _rankResult;
@@ -89,28 +86,6 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
     super.dispose();
   }
 
-  Future<void> _markRoomFinished() async {
-    if (_roomMarkedFinished) return;
-    _roomMarkedFinished = true;
-
-    try {
-      final room = await Supabase.instance.client
-          .from('multiplayer_rooms')
-          .select('host_user_id')
-          .eq('id', widget.roomId)
-          .maybeSingle();
-
-      final myId = Supabase.instance.client.auth.currentUser?.id;
-      if (room == null || myId != room['host_user_id']) return;
-
-      await Supabase.instance.client
-          .from('multiplayer_rooms')
-          .update({'status': 'finished'}).eq('id', widget.roomId);
-    } catch (e) {
-      debugPrint('_markRoomFinished error: $e');
-    }
-  }
-
   Future<void> _applyRankResult(bool? won) async {
     if (_rankApplied || !widget.mode.isRanked) return;
     _rankApplied = true;
@@ -134,7 +109,6 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
     debugPrint(
         '🏆 _handleGameFinished: iWon=$won, isRanked=${widget.mode.isRanked}');
 
-    await _markRoomFinished();
     if (widget.mode.isRanked) {
       await _applyRankResult(won);
     }

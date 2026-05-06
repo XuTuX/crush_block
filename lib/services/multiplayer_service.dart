@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:socket_io_client/socket_io_client.dart' as socket_io;
 
+import '../config/app_config.dart';
 import 'auth_service.dart';
 import 'shop_service.dart';
 
@@ -19,10 +20,13 @@ extension MultiplayerModeX on MultiplayerMode {
 
 class MultiplayerService extends GetxService with WidgetsBindingObserver {
   static const String gameKey = 'crush_block';
-  static const String defaultServerUrl = 'http://localhost:3001';
+  static String get defaultServerUrl => AppConfig.gameServerUrl;
+  static const Duration _connectionTimeout = Duration(seconds: 5);
 
   final ShopService _shopService = Get.find<ShopService>();
   bool _availabilitySubscriptionActive = false;
+  Map<String, dynamic>? _pendingQuickMatchPayload;
+  Timer? _connectionTimeoutTimer;
 
   final isBusy = false.obs;
   final errorMessage = RxnString();
@@ -64,15 +68,15 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
       return;
     }
 
-    _ensureConnected();
     isBusy.value = true;
     isMatchmakingActive.value = true;
     errorMessage.value = null;
-    socket?.emit('join_queue', {
+    _pendingQuickMatchPayload = {
       'userId': userId,
       'nickname': auth.userNickname.value ?? 'Player',
-    });
-    isBusy.value = false;
+    };
+    _ensureConnected();
+    _sendPendingQuickMatch();
   }
 
   Future<void> createRoom({String? roomTitle}) async {
@@ -186,8 +190,15 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
   }
 
   Future<void> cancelMatchmaking() async {
+    _pendingQuickMatchPayload = null;
+    _connectionTimeoutTimer?.cancel();
+    final userId = Get.find<AuthService>().user.value?.id;
+    if (userId != null) {
+      socket?.emit('cancel_queue', {'userId': userId});
+    }
     await leaveRoom();
     isMatchmakingActive.value = false;
+    isBusy.value = false;
   }
 
   @override
@@ -203,13 +214,15 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
 
   @override
   void onClose() {
+    _connectionTimeoutTimer?.cancel();
     socket?.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.onClose();
   }
 
   void _initSocket() {
-    socket = socket_io.io(defaultServerUrl, <String, dynamic>{
+    final serverUrl = defaultServerUrl;
+    socket = socket_io.io(serverUrl, <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
       'reconnection': true,
@@ -218,8 +231,10 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
     });
 
     socket?.onConnect((_) {
-      debugPrint('Connected to Crush Block Socket.IO server');
+      debugPrint('Connected to Crush Block Socket.IO server: $serverUrl');
+      _connectionTimeoutTimer?.cancel();
       errorMessage.value = null;
+      _sendPendingQuickMatch();
       fetchAvailableRooms();
       refreshRoomPlayers();
     });
@@ -228,10 +243,26 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
       debugPrint('Disconnected from Crush Block Socket.IO server');
     });
 
+    socket?.onConnectError(_handleConnectionFailure);
+    socket?.onError(_handleConnectionFailure);
+    socket?.onReconnectFailed(_handleConnectionFailure);
+
     socket?.on('game_error', (data) {
       _applyUiMutation(() {
         errorMessage.value =
             data is Map ? data['message']?.toString() : '게임 서버 오류가 발생했습니다.';
+        isBusy.value = false;
+      });
+    });
+
+    socket?.on('queue_state', (data) {
+      _applyUiMutation(() {
+        final waiting = data is Map && data['waiting'] == true;
+        isMatchmakingActive.value = waiting;
+        isBusy.value = false;
+        if (waiting) {
+          errorMessage.value = null;
+        }
       });
     });
 
@@ -263,6 +294,55 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
     socket?.connect();
   }
 
+  void _sendPendingQuickMatch() {
+    final payload = _pendingQuickMatchPayload;
+    if (payload == null) return;
+
+    if (socket?.connected != true) {
+      _scheduleConnectionTimeout();
+      return;
+    }
+
+    debugPrint('Sending quick match queue request to $defaultServerUrl');
+    socket?.emit('join_queue', payload);
+    _pendingQuickMatchPayload = null;
+    _connectionTimeoutTimer?.cancel();
+  }
+
+  void _scheduleConnectionTimeout() {
+    _connectionTimeoutTimer?.cancel();
+    _connectionTimeoutTimer = Timer(_connectionTimeout, () {
+      if (socket?.connected == true || _pendingQuickMatchPayload == null) {
+        return;
+      }
+      _pendingQuickMatchPayload = null;
+      _applyUiMutation(() {
+        isBusy.value = false;
+        isMatchmakingActive.value = false;
+        errorMessage.value = _serverUnavailableMessage;
+      });
+    });
+  }
+
+  void _handleConnectionFailure(dynamic error) {
+    debugPrint('Crush Block Socket.IO connection failed: $error');
+    if (!_shouldKeepSocketWarm && _pendingQuickMatchPayload == null) return;
+
+    _pendingQuickMatchPayload = null;
+    _connectionTimeoutTimer?.cancel();
+    _applyUiMutation(() {
+      isBusy.value = false;
+      isFetchingRooms.value = false;
+      if (currentRoomId.value == null) {
+        isMatchmakingActive.value = false;
+      }
+      errorMessage.value = _serverUnavailableMessage;
+    });
+  }
+
+  String get _serverUnavailableMessage =>
+      '게임 서버에 연결할 수 없습니다. game_server 폴더에서 npm install 후 npm start 또는 npm run dev를 실행해주세요.';
+
   void _applyRoomState(Map<String, dynamic> data) {
     currentRoomId.value = data['roomId']?.toString();
     currentRoomTitle.value = data['roomTitle']?.toString();
@@ -270,6 +350,8 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
     currentTurn.value = data['currentTurn']?.toString() ?? 'player1';
     winner.value = data['winner']?.toString();
     winReason.value = data['winReason']?.toString();
+    final rawGameSeed = data['gameSeed'];
+    gameSeed.value = rawGameSeed is num ? rawGameSeed.toInt() : null;
     isMatchmakingActive.value = false;
 
     final rawBoard = data['board'];
@@ -317,6 +399,7 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
     currentRoomTitle.value = null;
     roomStatus.value = 'idle';
     currentTurn.value = 'player1';
+    gameSeed.value = null;
     winner.value = null;
     winReason.value = null;
     lastMove.value = null;

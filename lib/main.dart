@@ -16,8 +16,12 @@ void main() async {
 
   await dotenv.load(fileName: ".env", isOptional: true);
 
-  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
-    runApp(const MissingConfigApp());
+  final configError = _validateSupabaseConfig(
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
+  );
+  if (configError != null) {
+    runApp(MissingConfigApp(message: configError));
     return;
   }
 
@@ -55,18 +59,23 @@ class AppBinding extends Bindings {
 }
 
 class MissingConfigApp extends StatelessWidget {
-  const MissingConfigApp({super.key});
+  final String message;
+
+  const MissingConfigApp({
+    super.key,
+    required this.message,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: Center(
           child: Padding(
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: Text(
-              'Supabase 설정이 필요합니다.\n.env 파일을 추가하거나 --dart-define으로 SUPABASE_URL과 SUPABASE_ANON_KEY를 전달해주세요.',
+              message,
               textAlign: TextAlign.center,
             ),
           ),
@@ -74,6 +83,26 @@ class MissingConfigApp extends StatelessWidget {
       ),
     );
   }
+}
+
+String? _validateSupabaseConfig({
+  required String url,
+  required String anonKey,
+}) {
+  if (url.isEmpty || anonKey.isEmpty) {
+    return 'Supabase 설정이 필요합니다.\n.env 파일에 SUPABASE_URL과 SUPABASE_ANON_KEY를 모두 입력해주세요.';
+  }
+
+  final uri = Uri.tryParse(url);
+  if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+    return 'SUPABASE_URL 값이 올바른 URL이 아닙니다.\n예: https://your-project-ref.supabase.co';
+  }
+
+  if (uri.scheme != 'https') {
+    return 'SUPABASE_URL은 https로 시작해야 합니다.\n예: https://your-project-ref.supabase.co';
+  }
+
+  return null;
 }
 
 class CrushBlockApp extends StatelessWidget {

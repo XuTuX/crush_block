@@ -37,6 +37,13 @@ class AppConfig {
         defaultValue: 'delete-account',
       );
 
+  static String get gameServerUrl =>
+      dotenv.env['GAME_SERVER_URL'] ??
+      const String.fromEnvironment(
+        'GAME_SERVER_URL',
+        defaultValue: 'http://localhost:3001',
+      );
+
   // Legal links
   static const String termsOfServiceUrl = 'https://www.neoreo.org/terms';
   static const String privacyPolicyUrl =

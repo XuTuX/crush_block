@@ -23,7 +23,6 @@ import 'package:crush_block/theme/app_design_system.dart';
 import 'package:crush_block/theme/app_typography.dart';
 import 'package:crush_block/widgets/dialogs/edit_nickname_dialog.dart';
 import 'package:crush_block/widgets/match_found_overlay.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomeScreen extends StatefulWidget {
   final int initialPage;
@@ -703,18 +702,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final roomId = _multiplayerService.currentRoomId.value;
-      final myUserId = Supabase.instance.client.auth.currentUser?.id;
+      final myUserId = Get.find<AuthService>().user.value?.id;
 
       if (roomId == null || myUserId == null) {
         _navigatedToRankedGame = false;
         return;
       }
 
-      final seed = await _fetchSeedWithRetry(roomId);
-      if (seed == null) {
-        _navigatedToRankedGame = false;
-        return;
-      }
+      final seed = _multiplayerService.gameSeed.value;
 
       final playerInfo = await _resolvePlayerInfo(myUserId);
       if (playerInfo == null || !mounted) {
@@ -760,26 +755,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _showRankedMatchFoundOverlay = false;
       });
     }
-  }
-
-  Future<int?> _fetchSeedWithRetry(String roomId) async {
-    for (int attempt = 0; attempt < 8; attempt++) {
-      try {
-        final room = await Supabase.instance.client
-            .from('multiplayer_rooms')
-            .select('seed')
-            .eq('id', roomId)
-            .maybeSingle();
-
-        final seed = room?['seed'] as int?;
-        if (seed != null) return seed;
-      } catch (e) {
-        debugPrint('_fetchSeedWithRetry attempt ${attempt + 1}: $e');
-      }
-      // Longer delay for propagation
-      await Future.delayed(const Duration(milliseconds: 350));
-    }
-    return null;
   }
 
   Future<Map<String, dynamic>?> _resolvePlayerInfo(String myUserId) async {

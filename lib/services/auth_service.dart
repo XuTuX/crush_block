@@ -174,33 +174,53 @@ class AuthService extends GetxController {
   Future<void> _tryRecoverSession() async {
     try {
       final session = _supabase.auth.currentSession;
-      if (session == null) return;
+      if (session == null) {
+        user.value = null;
+        userNickname.value = null;
+        isProfileLoaded.value = true;
+        return;
+      }
 
-      // Check if session is expired
-      if (session.isExpired) {
-        debugPrint('🟡 [AuthService] Session expired, attempting refresh...');
-        try {
-          await _supabase.auth.refreshSession();
-          debugPrint('🟢 [AuthService] Session refreshed successfully');
-        } catch (e) {
-          debugPrint(
-              '🔴 [AuthService] Session refresh failed, signing out: $e');
-          await _supabase.auth.signOut();
-          user.value = null;
-        }
-      } else {
-        debugPrint('🟢 [AuthService] Valid session found on startup');
+      try {
+        debugPrint('🔵 [AuthService] Validating saved session...');
+        final response = await _supabase.auth.refreshSession();
+        user.value = response.session?.user;
+        debugPrint('🟢 [AuthService] Saved session validated');
+      } catch (e) {
+        debugPrint(
+          '🔴 [AuthService] Saved session is invalid, clearing local auth: $e',
+        );
+        await _clearLocalAuthState();
+        return;
       }
 
       // Fetch profile after session recovery
       if (user.value != null) {
-        fetchUserProfile();
+        await fetchUserProfile();
       }
     } catch (e) {
       debugPrint('🔴 [AuthService] Session recovery error: $e');
+      await _clearLocalAuthState();
     } finally {
       isAuthReady.value = true;
     }
+  }
+
+  Future<void> _clearLocalAuthState() async {
+    try {
+      await _supabase.auth.signOut(scope: SignOutScope.local);
+    } catch (e) {
+      debugPrint('🟡 [AuthService] Local auth clear failed: $e');
+    }
+
+    user.value = null;
+    userNickname.value = null;
+    hasProfileLoadError.value = false;
+    isProfileLoaded.value = true;
+
+    try {
+      await Get.find<ShopService>().loadForCurrentUser();
+    } catch (_) {}
   }
 
   /// Returns null on success, or an error message string on failure.

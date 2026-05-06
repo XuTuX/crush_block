@@ -1,11 +1,11 @@
 import 'package:crush_block/services/multiplayer_service.dart';
+import 'package:crush_block/services/auth_service.dart';
 import 'package:crush_block/services/shop_service.dart';
 import 'package:crush_block/theme/app_design_system.dart';
 import 'package:crush_block/theme/app_typography.dart';
 import 'package:crush_block/widgets/portrait_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../widgets/mp_buttons.dart';
 
@@ -194,7 +194,7 @@ class InRoomUi extends StatelessWidget {
   Widget _buildReadyButtons() {
     return Obx(() {
       final isReady = _service.players.any((p) =>
-          p['user_id'] == Supabase.instance.client.auth.currentUser?.id &&
+          p['user_id'] == Get.find<AuthService>().user.value?.id &&
           p['is_ready'] == true);
 
       return Row(
