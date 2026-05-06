@@ -76,6 +76,7 @@ function publicRoom(room) {
     board: room.board,
     players: room.players,
     currentTurn: room.currentTurn,
+    gameSeed: room.gameSeed,
     walls: room.walls,
     winner: room.winner,
     winReason: room.winReason,
@@ -234,6 +235,7 @@ function createRoom(socket, data = {}, fromQueuePlayer = null) {
     board: createEmptyBoard(),
     players: [host],
     currentTurn: 'player1',
+    gameSeed: Date.now(),
     walls: [],
     winner: null,
     winReason: null,
@@ -337,6 +339,8 @@ async function saveResult(room) {
 }
 
 io.on('connection', (socket) => {
+  console.log(`[socket] connected ${socket.id}`);
+
   socket.on('list_rooms', () => {
     socket.emit('available_rooms', waitingRoomList());
   });
@@ -352,9 +356,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('join_queue', (data = {}) => {
-    removeFromQueue(socket.id, data.userId);
+    removeFromQueue(socket.id);
     const player = createPlayer(socket, data, 'player1');
     waitingQueue.push(player);
+    console.log(`[queue] ${player.nickname} (${player.userId}) joined; waiting=${waitingQueue.length}`);
 
     if (waitingQueue.length < 2) {
       socket.emit('queue_state', { waiting: true });
@@ -365,7 +370,11 @@ io.on('connection', (socket) => {
     const second = waitingQueue.shift();
     const firstSocket = io.sockets.sockets.get(first.socketId);
     const secondSocket = io.sockets.sockets.get(second.socketId);
-    if (!firstSocket || !secondSocket) return;
+    if (!firstSocket || !secondSocket) {
+      if (firstSocket) waitingQueue.unshift(first);
+      if (secondSocket) waitingQueue.unshift(second);
+      return;
+    }
 
     const room = createRoom(firstSocket, {
       userId: first.userId,
@@ -374,7 +383,14 @@ io.on('connection', (socket) => {
     }, first);
     room.players.push({ ...second, role: 'player2' });
     secondSocket.join(room.roomId);
+    console.log(`[match] ${first.nickname} vs ${second.nickname}; room=${room.roomId}`);
     startSelecting(room);
+  });
+
+  socket.on('cancel_queue', (data = {}) => {
+    removeFromQueue(socket.id, data.userId);
+    socket.emit('queue_state', { waiting: false });
+    console.log(`[queue] ${data.userId || socket.id} cancelled; waiting=${waitingQueue.length}`);
   });
 
   socket.on('select_block', (data = {}) => {
@@ -494,6 +510,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
+    console.log(`[socket] disconnected ${socket.id}`);
     const queued = waitingQueue.find((p) => p.socketId === socket.id);
     removeFromQueue(socket.id, queued?.userId);
 
