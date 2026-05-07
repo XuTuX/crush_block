@@ -9,6 +9,7 @@ class MultiplayerDraggableBlock extends StatelessWidget {
   final double cellSize;
   final GlobalKey gridKey;
   final int rotation;
+  final VoidCallback onRotate;
 
   const MultiplayerDraggableBlock({
     super.key,
@@ -16,6 +17,7 @@ class MultiplayerDraggableBlock extends StatelessWidget {
     required this.cellSize,
     required this.gridKey,
     required this.rotation,
+    required this.onRotate,
   });
 
   @override
@@ -48,38 +50,53 @@ class MultiplayerDraggableBlock extends StatelessWidget {
           ),
         );
 
-        return Draggable<int>(
-          data: blockIndex,
-          maxSimultaneousDrags: canDrag ? 1 : 0,
-          feedback: Material(
-            color: Colors.transparent,
-            child: TetrisBlock(
-              shape: shape,
-              color: color.withValues(alpha: 0.72),
-              cellSize: cellSize,
-              columns: columns,
-              rows: rows,
+        return Semantics(
+          button: canDrag,
+          label: '블록 회전',
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: canDrag ? onRotate : null,
+            child: Draggable<int>(
+              data: blockIndex,
+              maxSimultaneousDrags: canDrag ? 1 : 0,
+              feedback: Material(
+                color: Colors.transparent,
+                child: TetrisBlock(
+                  shape: shape,
+                  color: color.withValues(alpha: 0.72),
+                  cellSize: cellSize,
+                  columns: columns,
+                  rows: rows,
+                ),
+              ),
+              childWhenDragging: SizedBox(
+                width: columns * cellSize * 0.72,
+                height: rows * cellSize * 0.72,
+              ),
+              dragAnchorStrategy: (_, __, ___) {
+                return Offset(columns * cellSize * 0.5, rows * cellSize);
+              },
+              onDragStarted: controller.clearHover,
+              onDragUpdate: (details) {
+                _handleDragUpdate(
+                  details,
+                  controller,
+                  shape,
+                  color,
+                  columns,
+                  rows,
+                );
+              },
+              onDragEnd: (details) {
+                _handleDragEnd(details, controller, columns, rows);
+              },
+              onDraggableCanceled: (_, __) => controller.clearHover(),
+              child: SizedBox(
+                width: columns * cellSize * 0.72,
+                height: rows * cellSize * 0.72,
+                child: dockBlock,
+              ),
             ),
-          ),
-          childWhenDragging: SizedBox(
-            width: columns * cellSize * 0.72,
-            height: rows * cellSize * 0.72,
-          ),
-          dragAnchorStrategy: (_, __, ___) {
-            return Offset(columns * cellSize * 0.5, rows * cellSize);
-          },
-          onDragStarted: controller.clearHover,
-          onDragUpdate: (details) {
-            _handleDragUpdate(details, controller, shape, color, columns, rows);
-          },
-          onDragEnd: (details) {
-            _handleDragEnd(details, controller, columns, rows);
-          },
-          onDraggableCanceled: (_, __) => controller.clearHover(),
-          child: SizedBox(
-            width: columns * cellSize * 0.72,
-            height: rows * cellSize * 0.72,
-            child: dockBlock,
           ),
         );
       },
