@@ -1,10 +1,7 @@
-import 'package:crush_block/services/database_service.dart';
 import 'package:crush_block/services/multiplayer_service.dart';
-import 'package:crush_block/services/shop_service.dart';
 import 'package:crush_block/theme/app_components.dart';
 import 'package:crush_block/theme/app_design_system.dart';
 import 'package:crush_block/theme/app_typography.dart';
-import 'package:crush_block/widgets/portrait_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -15,8 +12,6 @@ class MpGameOverOverlay extends StatefulWidget {
   final MultiplayerMode mode;
   final String myNickname;
   final String opponentNickname;
-  final String myPortraitId;
-  final String opponentPortraitId;
   final String roomId;
 
   const MpGameOverOverlay({
@@ -25,8 +20,6 @@ class MpGameOverOverlay extends StatefulWidget {
     required this.mode,
     required this.myNickname,
     required this.opponentNickname,
-    required this.myPortraitId,
-    required this.opponentPortraitId,
     required this.roomId,
   });
 
@@ -36,9 +29,6 @@ class MpGameOverOverlay extends StatefulWidget {
 
 class _MpGameOverOverlayState extends State<MpGameOverOverlay>
     with SingleTickerProviderStateMixin {
-  bool _rankApplied = false;
-  bool _resultProcessingStarted = false;
-  RankedMatchResult? _rankResult;
   Worker? _gameFinishedWorker;
 
   late AnimationController _animController;
@@ -51,13 +41,13 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
 
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 180),
     );
     _fadeIn = CurvedAnimation(
       parent: _animController,
       curve: Curves.easeOut,
     );
-    _slideUp = Tween<double>(begin: 40, end: 0).animate(
+    _slideUp = Tween<double>(begin: 12, end: 0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
 
@@ -65,7 +55,6 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
       widget.controller.gameFinishedRx,
       (finished) {
         if (finished) {
-          _handleGameFinished();
           _animController.forward();
         }
       },
@@ -73,7 +62,6 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && widget.controller.gameFinishedRx.value) {
-        _handleGameFinished();
         _animController.forward();
       }
     });
@@ -86,34 +74,6 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
     super.dispose();
   }
 
-  Future<void> _applyRankResult(bool? won) async {
-    if (_rankApplied || !widget.mode.isRanked) return;
-    _rankApplied = true;
-
-    debugPrint('🏆 _applyRankResult: won=$won, mode=${widget.mode}');
-    final dbService = Get.find<DatabaseService>();
-    final result = await dbService.applyRankedMatchResult(won);
-    debugPrint(
-        '🏆 RankResult: before=${result.beforePoints}, after=${result.afterPoints}, delta=${result.delta}');
-    if (!mounted) return;
-    setState(() {
-      _rankResult = result;
-    });
-  }
-
-  Future<void> _handleGameFinished() async {
-    if (_resultProcessingStarted) return;
-    _resultProcessingStarted = true;
-
-    final won = widget.controller.iWon.value;
-    debugPrint(
-        '🏆 _handleGameFinished: iWon=$won, isRanked=${widget.mode.isRanked}');
-
-    if (widget.mode.isRanked) {
-      await _applyRankResult(won);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Obx(() {
@@ -123,10 +83,8 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
 
       final won = widget.controller.iWon.value;
       final opponentLeft = widget.controller.opponentLeftMessage.value;
-      final wonByConnection = widget.controller.winnerUserId.value != null;
       final config = _buildResultConfig(
         won: won,
-        wonByConnection: wonByConnection,
         opponentLeft: opponentLeft,
       );
 
@@ -175,16 +133,16 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
       ),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: config.titleColor.withValues(alpha: 0.2),
+          color: AppColors.borderSoft,
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
             color: AppColors.ink.withValues(alpha: 0.08),
-            blurRadius: 32,
-            offset: const Offset(0, 12),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -192,8 +150,7 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Portrait VS row
-          _buildPortraitVersusRow(config),
+          _buildPlayerResultRow(config),
 
           const SizedBox(height: AppSpacing.lg),
 
@@ -201,12 +158,9 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
           Text(
             config.title,
             textAlign: TextAlign.center,
-            style: AppTypography.display.copyWith(
+            style: AppTypography.title.copyWith(
               color: config.titleColor,
-              fontSize: 40,
               fontWeight: FontWeight.w900,
-              letterSpacing: -1.0,
-              height: 1.1,
             ),
           ),
 
@@ -223,18 +177,29 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
             ),
           ],
 
-          // Ranked reward
-          if (widget.mode.isRanked) ...[
-            const SizedBox(height: AppSpacing.lg),
-            _buildRankedReward(),
-          ],
-
           const SizedBox(height: AppSpacing.xl),
 
           // Return button
           AppActionButton(
-            label: '돌아가기',
+            label: '다시 시작',
             height: 48,
+            icon: Icons.refresh_rounded,
+            onPressed: () async {
+              final mpService = Get.find<MultiplayerService>();
+              await mpService.leaveRoom();
+              mpService.configureMode(MultiplayerMode.ranked);
+              await mpService.quickMatch();
+              if (Get.key.currentState?.canPop() ?? false) {
+                Get.back();
+              }
+            },
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          AppActionButton(
+            label: '나가기',
+            tone: AppButtonTone.secondary,
+            height: 48,
+            icon: Icons.home_rounded,
             onPressed: () async {
               final mpService = Get.find<MultiplayerService>();
               await mpService.leaveRoom();
@@ -248,191 +213,20 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
     );
   }
 
-  Widget _buildRankedReward() {
-    if (_rankResult == null) {
-      return Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceMuted,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Center(
-          child: Text(
-            '포인트 계산 중...',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.textMuted,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      );
-    }
-
-    final result = _rankResult!;
-    final delta = result.delta;
-    final prefix = delta > 0 ? '+' : '';
-    final valueColor = delta > 0
-        ? AppColors.success
-        : delta < 0
-            ? AppColors.danger
-            : AppColors.textMuted;
-    final badgeIcon = delta > 0
-        ? Icons.trending_up_rounded
-        : delta < 0
-            ? Icons.trending_down_rounded
-            : Icons.horizontal_rule_rounded;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // 메인 스코어 및 티어 영역
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceMuted,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: TweenAnimationBuilder<int>(
-            tween:
-                IntTween(begin: result.beforePoints, end: result.afterPoints),
-            duration: const Duration(milliseconds: 1000),
-            curve: Curves.easeOutCubic,
-            builder: (context, value, child) {
-              return Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        result.afterSummary.gradeIconPath,
-                        width: 20,
-                        height: 20,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        result.afterSummary.gradeLabel,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '$value',
-                        style: AppTypography.display.copyWith(
-                          color: AppColors.ink,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 32,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'P',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 12),
-        // 변화량 뱃지 영역 (+10점 등)
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          decoration: BoxDecoration(
-            color: valueColor,
-            borderRadius: BorderRadius.circular(100),
-            boxShadow: [
-              BoxShadow(
-                color: valueColor.withValues(alpha: 0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                badgeIcon,
-                color: AppColors.onPrimary,
-                size: 16,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                '$prefix$delta 점',
-                style: AppTypography.label.copyWith(
-                  color: AppColors.onPrimary,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPortraitVersusRow(_MpResultConfig config) {
-    final shopService = Get.find<ShopService>();
-    final myCharacter = shopService.characterItemForId(
-          widget.controller.myCharacterId.value,
-        ) ??
-        shopService.selectedCharacter;
-    final opponentCharacter = shopService.characterItemForId(
-          widget.controller.opponentCharacterId.value,
-        ) ??
-        shopService.characterItemForId(ShopService.characterCatalog.first.id) ??
-        shopService.selectedCharacter;
-
+  Widget _buildPlayerResultRow(_MpResultConfig config) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // My portrait
           Flexible(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                PortraitAvatar(
-                  assetPath: shopService.portraitAssetForId(
-                    widget.controller.myPortraitId.value.isNotEmpty
-                        ? widget.controller.myPortraitId.value
-                        : widget.myPortraitId,
-                  ),
-                  size: 68, // Increased size
-                  accentColor: myCharacter.themeColor,
-                  borderWidth: 2.0,
-                  fit: BoxFit.contain, // Better for character slimes
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.myNickname,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.ink,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
+            child: _PlayerResultBadge(
+              label: '내 블록',
+              nickname: widget.myNickname,
+              color: AppColors.primary,
+              icon: Icons.circle_rounded,
             ),
           ),
-
-          // VS label
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
@@ -445,35 +239,12 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
               ),
             ),
           ),
-
-          // Opponent portrait
           Flexible(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                PortraitAvatar(
-                  assetPath: shopService.portraitAssetForId(
-                    widget.controller.opponentPortraitId.value.isNotEmpty
-                        ? widget.controller.opponentPortraitId.value
-                        : widget.opponentPortraitId,
-                  ),
-                  size: 68, // Increased size
-                  accentColor: opponentCharacter.themeColor,
-                  borderWidth: 2.0,
-                  fit: BoxFit.contain, // Better for character slimes
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.opponentNickname,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.ink,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
+            child: _PlayerResultBadge(
+              label: '상대 블록',
+              nickname: widget.opponentNickname,
+              color: AppColors.tileCoral,
+              icon: Icons.change_history_rounded,
             ),
           ),
         ],
@@ -483,15 +254,12 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
 
   _MpResultConfig _buildResultConfig({
     required bool? won,
-    required bool wonByConnection,
     required String? opponentLeft,
   }) {
     if (won == true) {
       String? subtitle;
       if (opponentLeft != null) {
         subtitle = opponentLeft;
-      } else if (wonByConnection) {
-        // Subtitle removed as per user request
       }
       return _MpResultConfig(
         title: '승리!',
@@ -501,13 +269,9 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
     }
 
     if (won == false) {
-      String? subtitle;
-      if (wonByConnection) {
-        // Subtitle removed as per user request
-      }
-      return _MpResultConfig(
+      return const _MpResultConfig(
         title: '패배',
-        subtitle: subtitle,
+        subtitle: null,
         titleColor: AppColors.danger,
       );
     }
@@ -530,4 +294,53 @@ class _MpResultConfig {
     required this.subtitle,
     required this.titleColor,
   });
+}
+
+class _PlayerResultBadge extends StatelessWidget {
+  final String label;
+  final String nickname;
+  final Color color;
+  final IconData icon;
+
+  const _PlayerResultBadge({
+    required this.label,
+    required this.nickname,
+    required this.color,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color, width: 2),
+          ),
+          child: Icon(icon, color: color, size: 22),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: AppTypography.tiny.copyWith(color: AppColors.textMuted),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          nickname,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTypography.caption.copyWith(
+            color: AppColors.ink,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
 }

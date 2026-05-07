@@ -23,13 +23,6 @@ class AppConfig {
             '205901272812-hgbcmb7fs0i6spqnbti38v2ji8qvucsn.apps.googleusercontent.com',
       );
 
-  static String get storePurchaseVerifyFunctionName =>
-      dotenv.env['STORE_PURCHASE_VERIFY_FUNCTION'] ??
-      const String.fromEnvironment(
-        'STORE_PURCHASE_VERIFY_FUNCTION',
-        defaultValue: 'claim-store-purchase',
-      );
-
   static String get deleteAccountFunctionName =>
       dotenv.env['DELETE_ACCOUNT_FUNCTION'] ??
       const String.fromEnvironment(

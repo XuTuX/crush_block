@@ -5,7 +5,7 @@ import 'package:crush_block/constant.dart';
 ///
 /// Hierarchy:
 ///   display  (36) → Hero title only
-///   headline (28) → Screen-leading statement, medium scores
+///   headline (28) → Screen-leading statement
 ///   title    (22) → Screen / dialog titles
 ///   subtitle (18) → Section headers, appbar titles
 ///   body     (15) → Primary body text, descriptions
@@ -14,15 +14,11 @@ import 'package:crush_block/constant.dart';
 ///   caption  (12) → Small informational text
 ///   tiny     (10) → Micro badges
 ///
-/// Scores:
-///   scoreDisplay (40) → Large score numbers
-///   scoreMedium  (30) → Score bar numbers
-///
 /// Buttons:
 ///   button      (15) → Standard button text
 ///
 /// Weights:
-///   w700 → Titles and scores
+///   w700 → Titles
 ///   w600 → Labels and buttons
 ///   w500 → Body and secondary text
 class AppTypography {
@@ -30,39 +26,39 @@ class AppTypography {
 
   static const display = TextStyle(
     fontSize: 36,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.8,
+    fontWeight: FontWeight.w900,
+    letterSpacing: 0,
     height: 1.15,
     color: charcoalBlack,
   );
 
   static const headline = TextStyle(
     fontSize: 28,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.6,
+    fontWeight: FontWeight.w900,
+    letterSpacing: 0,
     height: 1.2,
     color: charcoalBlack,
   );
 
   static const title = TextStyle(
     fontSize: 22,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.4,
+    fontWeight: FontWeight.w900,
+    letterSpacing: 0,
     height: 1.2,
     color: charcoalBlack,
   );
 
   static const subtitle = TextStyle(
     fontSize: 18,
-    fontWeight: FontWeight.w600,
-    letterSpacing: -0.2,
+    fontWeight: FontWeight.w900,
+    letterSpacing: 0,
     height: 1.25,
     color: charcoalBlack,
   );
 
   static const body = TextStyle(
     fontSize: 15,
-    fontWeight: FontWeight.w500,
+    fontWeight: FontWeight.w600,
     height: 1.55,
     color: charcoalBlack,
   );
@@ -76,29 +72,15 @@ class AppTypography {
 
   static const label = TextStyle(
     fontSize: 12,
-    fontWeight: FontWeight.w600,
-    letterSpacing: 0.2,
+    fontWeight: FontWeight.w900,
+    letterSpacing: 0,
     color: charcoalBlack,
   );
 
   static const button = TextStyle(
     fontSize: 15,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w900,
     letterSpacing: 0,
-    color: charcoalBlack,
-  );
-
-  static const scoreDisplay = TextStyle(
-    fontSize: 40,
-    fontWeight: FontWeight.w700,
-    height: 1,
-    color: charcoalBlack,
-  );
-
-  static const scoreMedium = TextStyle(
-    fontSize: 30,
-    fontWeight: FontWeight.w700,
-    height: 1,
     color: charcoalBlack,
   );
 
@@ -110,7 +92,7 @@ class AppTypography {
 
   static const tiny = TextStyle(
     fontSize: 10,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w900,
     color: charcoalBlack,
   );
 }

@@ -3,8 +3,8 @@ import 'package:crush_block/services/auth_service.dart';
 import 'package:crush_block/theme/app_components.dart';
 import 'package:crush_block/theme/app_design_system.dart';
 import 'package:crush_block/theme/app_typography.dart';
+import 'package:crush_block/widgets/brand_assets.dart';
 import 'package:crush_block/widgets/home_screen/background_painter.dart';
-import 'package:crush_block/widgets/home_screen/home_components.dart';
 import 'package:crush_block/widgets/home_screen/login_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -74,7 +74,7 @@ class LoginScreen extends StatelessWidget {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const HomeLogo(),
+                                  const AppBrandLogo(),
                                   const SizedBox(height: AppSpacing.xl),
                                   const Text(
                                     'Crush Block',

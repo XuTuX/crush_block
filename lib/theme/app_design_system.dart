@@ -5,41 +5,66 @@ import 'package:google_fonts/google_fonts.dart';
 class AppColors {
   AppColors._();
 
-  static const Color ink = Color(0xFF161A23);
-  static const Color textMuted = Color(0xA8161A23);
-  static const Color textSubtle = Color(0x7A161A23);
+  static const Color ink = Color(0xFF1A1A1A);
+  static const Color textMuted = Color(0x8A1A1A1A);
+  static const Color textSubtle = Color(0x591A1A1A);
 
-  static const Color background = Color(0xFFF6F7FB);
-  static const Color backgroundSoft = Color(0xFFEEF2F8);
-  static const Color backgroundWash = Color(0xFFFBFCFE);
-  static const Color surface = Color(0xFFF2F4FA);
-  static const Color surfaceMuted = Color(0xFFF8F9FC);
-  static const Color borderSoft = Color(0xFFDCE2F0);
-  static const Color overlay = Color(0x8C161A23);
+  static const Color background = Color(0xFFF8F9FA);
+  static const Color backgroundSoft = Color(0xFFF1F5F9);
+  static const Color backgroundWash = Color(0xFFFFFFFF);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceMuted = Color(0xFFF3F4F6);
+  static const Color borderSoft = Color(0x1F1A1A1A);
+  static const Color overlay = Color(0xD91A1A1A);
 
-  static const Color primary = Color(0xFF3563F0);
-  static const Color primarySoft = Color(0xFFE6ECFF);
-  static const Color secondary = Color(0xFF6FA7B7);
-  static const Color secondarySoft = Color(0xFFE6F1F4);
-  static const Color success = Color(0xFF61A89E);
-  static const Color successSoft = Color(0xFFE6F3F0);
-  static const Color danger = Color(0xFFE08A63);
-  static const Color dangerSoft = Color(0xFFF8EBE4);
-  static const Color onPrimary = backgroundWash;
+  static const Color primary = Color(0xFF0095FF);
+  static const Color primarySoft = Color(0xFFEFF6FF);
+  static const Color secondary = Color(0xFF2563EB);
+  static const Color secondarySoft = Color(0xFFE0F2FE);
+  static const Color reward = Color(0xFFF59E0B);
+  static const Color rewardSoft = Color(0xFFFFFBEB);
+  static const Color success = Color(0xFF00D47C);
+  static const Color successSoft = Color(0xFFE9FFF4);
+  static const Color warning = Color(0xFFF97316);
+  static const Color warningSoft = Color(0xFFFFF7ED);
+  static const Color danger = Color(0xFFEF4444);
+  static const Color dangerStrong = Color(0xFFDC2626);
+  static const Color dangerSoft = Color(0xFFFEF2F2);
+  static const Color onPrimary = Color(0xFFFFFFFF);
 
-  static const Color accentPeach = danger;
+  static const Color rankFirst = Color(0xFFFB7185);
+  static const Color rankSecond = Color(0xFFFB923C);
+  static const Color rankThird = Color(0xFFFBBF24);
+  static const Color participation = Color(0xFFE2E8F0);
+
+  static const Color tileCoral = Color(0xFFFF4D4D);
+  static const Color tileAmber = Color(0xFFFFB300);
+  static const Color tileMint = Color(0xFF00D47C);
+  static const Color tileAzure = Color(0xFF0095FF);
+  static const Color tileViolet = Color(0xFF8F00FF);
+
+  static const List<Color> areaPalette = [
+    Color(0xFFFF7F7F),
+    Color(0xFFFFB27A),
+    Color(0xFFF9D86D),
+    Color(0xFFA3D9A5),
+    Color(0xFFA3CFFF),
+    Color(0xFFC4A3FF),
+  ];
+
+  static const Color accentPeach = rankFirst;
   static const Color accentSage = success;
-  static const Color accentGold = Color(0xFFD3A36E);
-  static const Color accentCoral = danger;
-  static const Color accentApricot = danger;
-  static const Color accentLemon = Color(0xFFF1E5D8);
-  static const Color accentMint = Color(0xFFBCD8E1);
+  static const Color accentGold = reward;
+  static const Color accentCoral = tileCoral;
+  static const Color accentApricot = warning;
+  static const Color accentLemon = rewardSoft;
+  static const Color accentMint = successSoft;
   static const Color accentSky = primary;
 
   static const LinearGradient backgroundGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [backgroundWash, backgroundSoft],
+    colors: [background, backgroundWash],
   );
 }
 
@@ -59,18 +84,19 @@ class AppSpacing {
 class AppRadius {
   AppRadius._();
 
-  static const double sm = 14;
-  static const double md = 20;
+  static const double sm = 12;
+  static const double md = 16;
   static const double lg = 20;
-  static const double xl = 20;
+  static const double xl = 24;
   static const double round = 999;
 }
 
 class AppStroke {
   AppStroke._();
 
-  static const double soft = 1;
-  static const double strong = 1.5;
+  static const double soft = 1.5;
+  static const double strong = 2.5;
+  static const double heavy = 3;
 }
 
 class AppShadows {
@@ -78,19 +104,29 @@ class AppShadows {
 
   static final List<BoxShadow> softCard = [
     BoxShadow(
-      color: AppColors.ink.withValues(alpha: 0.045),
-      blurRadius: 18,
-      offset: const Offset(0, 8),
+      color: AppColors.ink.withValues(alpha: 0.95),
+      blurRadius: 0,
+      offset: const Offset(3, 3),
     ),
   ];
 
   static final List<BoxShadow> liftedCard = [
     BoxShadow(
-      color: AppColors.ink.withValues(alpha: 0.06),
-      blurRadius: 26,
-      offset: const Offset(0, 12),
+      color: AppColors.ink.withValues(alpha: 0.95),
+      blurRadius: 0,
+      offset: const Offset(5, 5),
     ),
   ];
+
+  static List<BoxShadow> hard({double offset = 3}) {
+    return [
+      BoxShadow(
+        color: AppColors.ink.withValues(alpha: 0.95),
+        blurRadius: 0,
+        offset: Offset(offset, offset),
+      ),
+    ];
+  }
 }
 
 class AppDecorations {
@@ -107,11 +143,8 @@ class AppDecorations {
       color: color,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: borderColor ??
-            (outlined
-                ? AppColors.ink.withValues(alpha: 0.14)
-                : AppColors.borderSoft),
-        width: outlined ? AppStroke.strong : AppStroke.soft,
+        color: borderColor ?? AppColors.ink,
+        width: AppStroke.strong,
       ),
       boxShadow: lifted ? AppShadows.liftedCard : AppShadows.softCard,
     );
@@ -123,6 +156,7 @@ class AppDecorations {
     return BoxDecoration(
       color: color,
       borderRadius: BorderRadius.circular(AppRadius.sm),
+      border: Border.all(color: AppColors.ink, width: AppStroke.soft),
     );
   }
 
@@ -182,7 +216,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surfaceMuted,
+        fillColor: AppColors.surface,
         hintStyle: AppTypography.body.copyWith(
           color: AppColors.textSubtle,
         ),
@@ -197,8 +231,8 @@ class AppTheme {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
           borderSide: const BorderSide(
-            color: AppColors.borderSoft,
-            width: AppStroke.soft,
+            color: AppColors.ink,
+            width: AppStroke.strong,
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -234,6 +268,10 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.lg),
+            side: const BorderSide(
+              color: AppColors.ink,
+              width: AppStroke.strong,
+            ),
           ),
           textStyle: AppTypography.button.copyWith(color: AppColors.onPrimary),
         ),
@@ -246,8 +284,8 @@ class AppTheme {
           minimumSize: const Size.fromHeight(56),
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           side: const BorderSide(
-            color: AppColors.borderSoft,
-            width: AppStroke.soft,
+            color: AppColors.ink,
+            width: AppStroke.strong,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.lg),

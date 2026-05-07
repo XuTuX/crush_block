@@ -24,6 +24,7 @@ class MpPrimaryButton extends StatelessWidget {
       label: label,
       icon: icon,
       isLoading: isLoading,
+      backgroundColor: color,
       onPressed: onPressed,
     );
   }
@@ -69,7 +70,7 @@ class MpAppBarButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppIconCircleButton(
       icon: icon,
-      foregroundColor: AppColors.primary,
+      foregroundColor: AppColors.ink,
       onTap: onPressed,
     );
   }

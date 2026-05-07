@@ -3,7 +3,6 @@ import 'package:crush_block/theme/app_design_system.dart';
 
 const String kAppBrandIconAsset =
     'assets/icons/crush_block_logo_transparent.png';
-const String kAreaCoinIconAsset = 'assets/icons/Area_coin.png';
 
 class AppBrandLogo extends StatelessWidget {
   final double size;
@@ -15,24 +14,57 @@ class AppBrandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final blockSize = size * 0.6;
+    final borderWidth = size < 96 ? 2.5 : 3.2;
+
     return SizedBox(
       width: size,
       height: size,
-      child: Image.asset(
-        kAppBrandIconAsset,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: size * 0.22,
+            top: size * 0.22,
+            child: _LogoBlock(
+              color: AppColors.areaPalette[4],
+              size: blockSize,
+              borderWidth: borderWidth,
+            ),
+          ),
+          Positioned(
+            left: size * 0.11,
+            top: size * 0.11,
+            child: _LogoBlock(
+              color: AppColors.areaPalette[1],
+              size: blockSize,
+              borderWidth: borderWidth,
+            ),
+          ),
+          Positioned(
+            left: 0,
+            top: 0,
+            child: _LogoBlock(
+              color: AppColors.areaPalette[0],
+              size: blockSize,
+              borderWidth: borderWidth,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class AppCoinIcon extends StatelessWidget {
+class _LogoBlock extends StatelessWidget {
+  final Color color;
   final double size;
+  final double borderWidth;
 
-  const AppCoinIcon({
-    super.key,
-    this.size = 18,
+  const _LogoBlock({
+    required this.color,
+    required this.size,
+    required this.borderWidth,
   });
 
   @override
@@ -41,19 +73,12 @@ class AppCoinIcon extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.accentGold.withValues(alpha: 0.18),
-            blurRadius: size * 0.35,
-            offset: Offset(0, size * 0.12),
-          ),
-        ],
-      ),
-      child: Image.asset(
-        kAreaCoinIconAsset,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
+        color: color,
+        borderRadius: BorderRadius.circular(size * 0.22),
+        border: Border.all(
+          color: AppColors.ink,
+          width: borderWidth,
+        ),
       ),
     );
   }

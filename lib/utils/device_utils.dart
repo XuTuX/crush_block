@@ -18,14 +18,6 @@ class DeviceUtils {
     return isTablet(context) ? 720 : 600;
   }
 
-  /// Returns the recommended shop grid column count.
-  static int shopGridColumns(BuildContext context) {
-    if (!isTablet(context)) return 3;
-    final width = MediaQuery.of(context).size.width;
-    if (width >= 1024) return 5;
-    return 4;
-  }
-
   /// Returns a clamped grid size for the game board on tablets.
   /// We cap at 480 so the board does not become absurdly large.
   static double clampedGridSize(

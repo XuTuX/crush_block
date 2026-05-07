@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -7,7 +8,6 @@ import 'package:socket_io_client/socket_io_client.dart' as socket_io;
 
 import '../config/app_config.dart';
 import 'auth_service.dart';
-import 'shop_service.dart';
 
 enum MultiplayerMode { ranked, friendly }
 
@@ -23,7 +23,8 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
   static String get defaultServerUrl => AppConfig.gameServerUrl;
   static const Duration _connectionTimeout = Duration(seconds: 5);
 
-  final ShopService _shopService = Get.find<ShopService>();
+  final String _clientId =
+      'client_${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(1 << 32)}';
   bool _availabilitySubscriptionActive = false;
   Map<String, dynamic>? _pendingQuickMatchPayload;
   Timer? _connectionTimeoutTimer;
@@ -73,6 +74,7 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
     errorMessage.value = null;
     _pendingQuickMatchPayload = {
       'userId': userId,
+      'clientId': _clientId,
       'nickname': auth.userNickname.value ?? 'Player',
     };
     _ensureConnected();
@@ -92,6 +94,7 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
     errorMessage.value = null;
     socket?.emit('create_room', {
       'userId': userId,
+      'clientId': _clientId,
       'nickname': auth.userNickname.value ?? 'Player',
       'roomTitle': roomTitle?.trim().isEmpty == true ? null : roomTitle?.trim(),
     });
@@ -112,6 +115,7 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
     socket?.emit('join_room', {
       'roomId': roomId,
       'userId': userId,
+      'clientId': _clientId,
       'nickname': auth.userNickname.value ?? 'Player',
     });
     isBusy.value = false;
@@ -128,7 +132,11 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
     final auth = Get.find<AuthService>();
     final userId = auth.user.value?.id;
     if (roomId == null || userId == null) return;
-    socket?.emit('reconnect_room', {'roomId': roomId, 'userId': userId});
+    socket?.emit('reconnect_room', {
+      'roomId': roomId,
+      'userId': userId,
+      'clientId': _clientId,
+    });
   }
 
   Future<void> fetchAvailableRooms() async {
@@ -167,6 +175,7 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
       socket?.emit('leave_room', {
         'roomId': roomId,
         'userId': userId,
+        'clientId': _clientId,
         'countAsForfeit': countAsForfeit,
       });
     }
@@ -194,7 +203,7 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
     _connectionTimeoutTimer?.cancel();
     final userId = Get.find<AuthService>().user.value?.id;
     if (userId != null) {
-      socket?.emit('cancel_queue', {'userId': userId});
+      socket?.emit('cancel_queue', {'userId': userId, 'clientId': _clientId});
     }
     await leaveRoom();
     isMatchmakingActive.value = false;
@@ -380,14 +389,21 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
     if (rawPlayers is List) {
       players.value = rawPlayers.whereType<Map>().map((player) {
         final map = Map<String, dynamic>.from(player);
+        final localSocketId = socket?.id;
+        final remoteClientId = map['clientId']?.toString();
+        final isMe = remoteClientId != null && remoteClientId.isNotEmpty
+            ? remoteClientId == _clientId
+            : localSocketId != null && map['socketId'] == localSocketId;
         return {
           'user_id': map['userId'],
+          'socket_id': map['socketId'],
+          'client_id': remoteClientId,
+          'is_me': isMe,
           'profiles': {'nickname': map['nickname']},
           'is_ready': map['ready'] == true,
           'role': map['role'],
           'selectedBlock': map['selectedBlock'],
           'connected': map['connected'] == true,
-          'portrait_id': _shopService.defaultPortraitId,
         };
       }).toList();
     }

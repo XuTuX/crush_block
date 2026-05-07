@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:crush_block/utils/device_utils.dart';
-import 'package:get/get.dart';
 import 'package:crush_block/constant.dart';
-import 'package:crush_block/services/auth_service.dart';
 import 'package:crush_block/services/database_service.dart';
 import 'package:crush_block/theme/app_components.dart';
 import 'package:crush_block/theme/app_design_system.dart';
 import 'package:crush_block/theme/app_typography.dart';
+import 'package:crush_block/utils/device_utils.dart';
+import 'package:crush_block/widgets/home_screen/background_painter.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class RankingScreen extends StatefulWidget {
   const RankingScreen({super.key});
@@ -16,7 +16,7 @@ class RankingScreen extends StatefulWidget {
 }
 
 class _RankingScreenState extends State<RankingScreen> {
-  late Future<List<dynamic>> _rankingFuture;
+  late Future<List<LeaderboardEntry>> _rankingFuture;
 
   @override
   void initState() {
@@ -24,14 +24,8 @@ class _RankingScreenState extends State<RankingScreen> {
     _rankingFuture = _loadRankingData();
   }
 
-  /// Fetches ranking data from the database.
-  Future<List<dynamic>> _loadRankingData() async {
-    final dbService = Get.find<DatabaseService>();
-    return Future.wait([
-      dbService.getMyRank(rankedRatingGameId),
-      dbService.getMyRankedSummary(),
-      dbService.getLeaderboard(rankedRatingGameId),
-    ]);
+  Future<List<LeaderboardEntry>> _loadRankingData() {
+    return Get.find<DatabaseService>().getMatchLeaderboard(gameId);
   }
 
   void _reloadRanking() {
@@ -42,421 +36,262 @@ class _RankingScreenState extends State<RankingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final AuthService authService = Get.find<AuthService>();
-    final String? myId = authService.user.value?.id;
-
-    return Container(
-      height: Get.height * 0.9,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(28),
-          topRight: Radius.circular(28),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          tooltip: '뒤로가기',
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: Get.back,
         ),
-        border: Border.all(
-          color: AppColors.borderSoft,
-          width: AppStroke.soft,
-        ),
-        boxShadow: AppShadows.liftedCard,
+        title: const Text('랭킹', style: AppTypography.subtitle),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(
-                    top: AppSpacing.sm, bottom: AppSpacing.md),
-                child: Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.borderSoft,
-                      borderRadius: BorderRadius.circular(AppRadius.round),
-                    ),
-                  ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomPaint(painter: GridPatternPainter()),
+          ),
+          SafeArea(
+            top: false,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: DeviceUtils.contentMaxWidth(context),
                 ),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.emoji_events_outlined,
-                      color: AppColors.primary,
-                      size: 22,
-                    ),
-                    SizedBox(width: AppSpacing.xs),
-                    Text(
-                      '랭킹전 순위표',
-                      style: AppTypography.title,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-                child: Text(
-                  '현재 티어와 상위 플레이어를 한 번에 확인하세요.',
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Expanded(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                          maxWidth: DeviceUtils.contentMaxWidth(context)),
-                      child: FutureBuilder<List<dynamic>>(
-                        future: _rankingFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  child: FutureBuilder<List<LeaderboardEntry>>(
+                    future: _rankingFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: AppColors.ink,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        );
+                      }
+
+                      if (snapshot.hasError) {
+                        return RankingErrorState(onRetry: _reloadRanking);
+                      }
+
+                      final entries =
+                          snapshot.data ?? const <LeaderboardEntry>[];
+                      if (entries.isEmpty) {
+                        return const EmptyRankingState();
+                      }
+
+                      return AppSurface(
+                        radius: 16,
+                        padding: EdgeInsets.zero,
+                        elevated: true,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: SingleChildScrollView(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
                               child: SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  color: AppColors.primary,
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            );
-                          }
-
-                          if (snapshot.hasError) {
-                            return RankingErrorState(onRetry: _reloadRanking);
-                          }
-
-                          final data = snapshot.data;
-                          final int? myRank = data?[0] as int?;
-                          final RankedProfileSummary? mySummary =
-                              data?[1] as RankedProfileSummary?;
-                          final List<Map<String, dynamic>> scores =
-                              List<Map<String, dynamic>>.from(data?[2] ?? []);
-
-                          if (scores.isEmpty) {
-                            return const EmptyRankingState();
-                          }
-
-                          return Column(
-                            children: [
-                              const SizedBox(height: AppSpacing.xs),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.xs,
-                                ),
-                                child: MyRankCard(
-                                  rank: myRank,
-                                  summary: mySummary,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.xl),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.sm,
-                                ),
-                                child: Row(
+                                width: 680,
+                                child: Column(
                                   children: [
-                                    Text(
-                                      '상위 플레이어',
-                                      style: AppTypography.label.copyWith(
-                                        color: AppColors.textSubtle,
-                                      ),
+                                    const _RankingHeader(),
+                                    const Divider(
+                                      height: 1,
+                                      color: AppColors.ink,
                                     ),
-                                    const SizedBox(width: AppSpacing.sm),
-                                    Expanded(
-                                      child: Container(
-                                        height: 1,
-                                        color: AppColors.borderSoft,
+                                    for (var i = 0;
+                                        i < entries.length;
+                                        i += 1) ...[
+                                      _RankingRow(
+                                        rank: i + 1,
+                                        entry: entries[i],
                                       ),
-                                    ),
+                                      if (i != entries.length - 1)
+                                        const Divider(
+                                          height: 1,
+                                          color: AppColors.borderSoft,
+                                        ),
+                                    ],
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: AppSpacing.xs),
-                              Expanded(
-                                child: ListView.builder(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    AppSpacing.xs,
-                                    0,
-                                    AppSpacing.xs,
-                                    AppSpacing.sm,
-                                  ),
-                                  itemCount: scores.length,
-                                  itemBuilder: (context, index) {
-                                    return RankListItem(
-                                      scoreData: scores[index],
-                                      index: index,
-                                      myId: myId,
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class MyRankCard extends StatelessWidget {
-  final int? rank;
-  final RankedProfileSummary? summary;
-
-  const MyRankCard({super.key, this.rank, this.summary});
-
-  @override
-  Widget build(BuildContext context) {
-    if (rank == null || summary == null) {
-      return AppSurface(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-        child: Center(
-          child: Text(
-            '랭킹전을 플레이해 보세요',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.textMuted,
             ),
           ),
-        ),
-      );
-    }
-
-    return AppSurface(
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Image.asset(
-                summary!.gradeIconPath,
-                width: 28,
-                height: 28,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text(summary!.gradeLabel, style: AppTypography.title),
-              const SizedBox(width: AppSpacing.lg),
-              Container(
-                width: 1,
-                height: 20,
-                color: AppColors.borderSoft,
-              ),
-              const SizedBox(width: AppSpacing.lg),
-              Text('$rank', style: AppTypography.scoreMedium),
-              Text(
-                '위',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.textMuted,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.lg),
-              Container(
-                width: 1,
-                height: 20,
-                color: AppColors.borderSoft,
-              ),
-              const SizedBox(width: AppSpacing.lg),
-              Text('${summary!.points}', style: AppTypography.scoreMedium),
-              Text(
-                '점수',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _RankProgressBar(summary: summary!),
         ],
       ),
     );
   }
 }
 
-class _RankProgressBar extends StatelessWidget {
-  final RankedProfileSummary summary;
-
-  const _RankProgressBar({required this.summary});
+class _RankingHeader extends StatelessWidget {
+  const _RankingHeader();
 
   @override
   Widget build(BuildContext context) {
-    final helperText = summary.isMaxGrade
-        ? '최고 티어에 도달했습니다'
-        : '다음 ${summary.nextGradeLabel}까지 ${summary.pointsToNextGrade}점';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              helperText,
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.ink,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              summary.isMaxGrade
-                  ? '${summary.points}점'
-                  : '${summary.pointsIntoGrade}/${summary.pointsInTier}점',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.textMuted,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: LinearProgressIndicator(
-            value: summary.progressToNextGrade,
-            minHeight: 8,
-            backgroundColor: AppColors.borderSoft,
-            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-          ),
-        ),
-      ],
+    return Container(
+      color: AppColors.areaPalette[2],
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      child: const Row(
+        children: [
+          _HeaderCell('순위', width: 58),
+          _HeaderCell('닉네임', flex: 1),
+          _HeaderCell('승리 수', width: 76),
+          _HeaderCell('패배 수', width: 76),
+          _HeaderCell('승률', width: 74),
+          _HeaderCell('최근 경기 결과', width: 150),
+        ],
+      ),
     );
   }
 }
 
-class RankListItem extends StatelessWidget {
-  final Map<String, dynamic> scoreData;
-  final int index;
-  final String? myId;
+class _RankingRow extends StatelessWidget {
+  final int rank;
+  final LeaderboardEntry entry;
 
-  const RankListItem({
-    super.key,
-    required this.scoreData,
-    required this.index,
-    required this.myId,
+  const _RankingRow({
+    required this.rank,
+    required this.entry,
   });
 
   @override
   Widget build(BuildContext context) {
-    final profileData = scoreData['profiles'];
-    Map<String, dynamic> profiles = {};
-    if (profileData is Map<String, dynamic>) {
-      profiles = profileData;
-    } else if (profileData is Map) {
-      profiles = Map<String, dynamic>.from(profileData);
-    } else if (profileData is List && profileData.isNotEmpty) {
-      final first = profileData.first;
-      if (first is Map<String, dynamic>) {
-        profiles = first;
-      } else if (first is Map) {
-        profiles = Map<String, dynamic>.from(first);
-      }
-    }
-
-    final nickname = profiles['nickname'] ?? '플레이어';
-    final rawScore = scoreData['score'];
-    final scoreVal = rawScore is num ? rawScore.toInt() : 0;
-    final userId = scoreData['user_id'];
-    final bool isMe = userId != null && userId == myId;
-    final rank = index + 1;
-
-    final bool isTopThree = rank <= 3;
+    final winRate = '${(entry.winRate * 100).round()}%';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.md,
       ),
-      decoration: BoxDecoration(
-        color: isMe ? AppColors.primarySoft : AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: isMe
-              ? AppColors.primary.withValues(alpha: 0.16)
-              : AppColors.borderSoft,
-        ),
-      ),
       child: Row(
         children: [
+          _ValueCell('$rank', width: 58, strong: rank <= 3),
+          _ValueCell(entry.nickname, flex: 1, strong: rank <= 3),
+          _ValueCell('${entry.wins}', width: 76),
+          _ValueCell('${entry.losses}', width: 76),
+          _ValueCell(winRate, width: 74),
           SizedBox(
-            width: 44,
-            child: RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: '$rank',
-                    style: AppTypography.body.copyWith(
-                      fontSize: isTopThree ? 18 : 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                  TextSpan(
-                    text: '위',
-                    style: AppTypography.body.copyWith(
-                      fontSize: isTopThree ? 11 : 10,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Row(
-              children: [
-                Flexible(
-                  child: Text(
-                    '$nickname · ${DatabaseService.gradeLabelForPoints(scoreVal)}',
-                    style: AppTypography.body.copyWith(
-                      fontSize: isTopThree ? 15 : 14,
-                      fontWeight: isMe ? FontWeight.w600 : FontWeight.w500,
-                      color: AppColors.ink,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Image.asset(
-                  DatabaseService.gradeIconPathForLabel(
-                    DatabaseService.gradeLabelForPoints(scoreVal),
-                  ),
-                  width: 18,
-                  height: 18,
-                ),
-              ],
-            ),
-          ),
-          Text(
-            '$scoreVal',
-            style: AppTypography.body.copyWith(
-              fontSize: isTopThree ? 16 : 14,
-              fontWeight: isMe ? FontWeight.w700 : FontWeight.w600,
-              color: isTopThree ? AppColors.ink : AppColors.textMuted,
+            width: 150,
+            child: Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: entry.recentResults.isEmpty
+                  ? [
+                      Text(
+                        '-',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ]
+                  : entry.recentResults
+                      .map((result) => _ResultPill(result: result))
+                      .toList(),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HeaderCell extends StatelessWidget {
+  final String label;
+  final double? width;
+  final int? flex;
+
+  const _HeaderCell(
+    this.label, {
+    this.width,
+    this.flex,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final child = Text(
+      label,
+      style: AppTypography.label.copyWith(color: AppColors.textMuted),
+    );
+
+    if (flex != null) return Expanded(flex: flex!, child: child);
+    return SizedBox(width: width, child: child);
+  }
+}
+
+class _ValueCell extends StatelessWidget {
+  final String value;
+  final double? width;
+  final int? flex;
+  final bool strong;
+
+  const _ValueCell(
+    this.value, {
+    this.width,
+    this.flex,
+    this.strong = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final child = Text(
+      value,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: AppTypography.bodySmall.copyWith(
+        color: AppColors.ink,
+        fontWeight: strong ? FontWeight.w900 : FontWeight.w600,
+      ),
+    );
+
+    if (flex != null) return Expanded(flex: flex!, child: child);
+    return SizedBox(width: width, child: child);
+  }
+}
+
+class _ResultPill extends StatelessWidget {
+  final String result;
+
+  const _ResultPill({required this.result});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (result) {
+      '승' => AppColors.primary,
+      '패' => AppColors.danger,
+      _ => AppColors.textMuted,
+    };
+
+    return Container(
+      width: 24,
+      height: 24,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.26)),
+      ),
+      child: Text(
+        result,
+        style: AppTypography.tiny.copyWith(color: color),
       ),
     );
   }
@@ -489,24 +324,23 @@ class RankingErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '랭킹 정보를 불러오지 못했습니다',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.textMuted,
-              ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '랭킹 정보를 불러오지 못했습니다',
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.textMuted,
             ),
-            const SizedBox(height: AppSpacing.sm),
-            TextButton(
-              onPressed: onRetry,
-              child: const Text('다시 시도'),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          AppActionButton(
+            label: '다시 시도',
+            icon: Icons.refresh_rounded,
+            tone: AppButtonTone.secondary,
+            onPressed: onRetry,
+          ),
+        ],
       ),
     );
   }

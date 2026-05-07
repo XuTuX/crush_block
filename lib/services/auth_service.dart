@@ -12,7 +12,6 @@ import 'package:crush_block/config/app_config.dart';
 import 'package:crush_block/services/database_service.dart';
 import 'package:crush_block/utils/random_nickname_generator.dart';
 import 'package:crush_block/services/multiplayer_service.dart';
-import 'package:crush_block/services/shop_service.dart';
 
 class AuthService extends GetxController {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -46,17 +45,11 @@ class AuthService extends GetxController {
 
       // If user logs in/out, update nickname accordingly
       if (user.value != null) {
-        try {
-          await Get.find<ShopService>().loadForCurrentUser();
-        } catch (_) {}
         fetchUserProfile();
       } else {
         userNickname.value = null;
         hasProfileLoadError.value = false;
         isProfileLoaded.value = true;
-        try {
-          await Get.find<ShopService>().loadForCurrentUser();
-        } catch (_) {}
       }
 
       if (data.event == AuthChangeEvent.signedOut) {
@@ -112,8 +105,6 @@ class AuthService extends GetxController {
       // Mark as loaded only if we successfully checked/processed the profile
       hasProfileLoadError.value = false;
       isProfileLoaded.value = true;
-      // Warm up rank summary cache eagerly
-      dbService.getMyRankedSummary();
       debugPrint(
           '🔵 [AuthService] Profile load/check finished. Nickname: ${userNickname.value}');
     } catch (e) {
@@ -217,10 +208,6 @@ class AuthService extends GetxController {
     userNickname.value = null;
     hasProfileLoadError.value = false;
     isProfileLoaded.value = true;
-
-    try {
-      await Get.find<ShopService>().loadForCurrentUser();
-    } catch (_) {}
   }
 
   /// Returns null on success, or an error message string on failure.
@@ -438,10 +425,6 @@ class AuthService extends GetxController {
       hasProfileLoadError.value = false;
       isProfileLoaded.value = true;
 
-      try {
-        await Get.find<ShopService>().loadForCurrentUser();
-      } catch (_) {}
-
       _redirectToAuthGate();
 
       return null;
@@ -474,10 +457,9 @@ class AuthService extends GetxController {
         mpService.resetOnLogout();
       } catch (_) {}
 
-      // Clear local score keys for this user
+      // Clear local migration marker for this user.
       try {
         final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('high_score_$deletingUserId');
         await prefs.remove('guest_merged_$deletingUserId');
       } catch (_) {}
 

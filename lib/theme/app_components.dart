@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:crush_block/theme/app_design_system.dart';
 import 'package:crush_block/theme/app_typography.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 enum AppButtonTone {
   primary,
   secondary,
+  reward,
   destructive,
 }
 
@@ -56,6 +58,7 @@ class AppActionButton extends StatelessWidget {
   final bool isLoading;
   final AppButtonTone tone;
   final double height;
+  final Color? backgroundColor;
 
   const AppActionButton({
     super.key,
@@ -65,50 +68,114 @@ class AppActionButton extends StatelessWidget {
     this.isLoading = false,
     this.tone = AppButtonTone.primary,
     this.height = 56,
+    this.backgroundColor,
   });
 
   bool get _enabled => onPressed != null && !isLoading;
 
   @override
   Widget build(BuildContext context) {
-    final isPrimary = tone == AppButtonTone.primary;
-    final isDestructive = tone == AppButtonTone.destructive;
-    final backgroundColor = isPrimary
-        ? AppColors.primary
-        : isDestructive
-            ? AppColors.danger
-            : AppColors.surface;
-    final foregroundColor =
-        isPrimary || isDestructive ? AppColors.onPrimary : AppColors.ink;
-
-    final button = isPrimary || isDestructive
-        ? ElevatedButton(
-            onPressed: _enabled ? onPressed : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: backgroundColor,
-              foregroundColor: foregroundColor,
-            ),
-            child: _ButtonContent(
-              label: label,
-              icon: icon,
-              isLoading: isLoading,
-              color: foregroundColor,
-            ),
-          )
-        : OutlinedButton(
-            onPressed: _enabled ? onPressed : null,
-            child: _ButtonContent(
-              label: label,
-              icon: icon,
-              isLoading: isLoading,
-              color: foregroundColor,
-            ),
-          );
-
     return SizedBox(
       width: double.infinity,
       height: height,
-      child: button,
+      child: _HardShadowButton(
+        enabled: _enabled,
+        onPressed: onPressed,
+        backgroundColor: _backgroundColor.withValues(alpha: _enabled ? 1 : 0.5),
+        radius: AppRadius.lg,
+        shadowOffset: 3,
+        child: _ButtonContent(
+          label: label,
+          icon: icon,
+          isLoading: isLoading,
+          color: _foregroundColor.withValues(alpha: _enabled ? 1 : 0.7),
+        ),
+      ),
+    );
+  }
+
+  Color get _backgroundColor {
+    if (backgroundColor != null) return backgroundColor!;
+    return switch (tone) {
+      AppButtonTone.primary => AppColors.tileAmber,
+      AppButtonTone.secondary => AppColors.surface,
+      AppButtonTone.reward => AppColors.reward,
+      AppButtonTone.destructive => AppColors.dangerSoft,
+    };
+  }
+
+  Color get _foregroundColor {
+    return switch (tone) {
+      AppButtonTone.primary => AppColors.ink,
+      AppButtonTone.secondary => AppColors.ink,
+      AppButtonTone.reward => AppColors.ink,
+      AppButtonTone.destructive => AppColors.dangerStrong,
+    };
+  }
+}
+
+class _HardShadowButton extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onPressed;
+  final bool enabled;
+  final Color backgroundColor;
+  final double radius;
+  final double shadowOffset;
+
+  const _HardShadowButton({
+    required this.child,
+    required this.onPressed,
+    required this.enabled,
+    required this.backgroundColor,
+    required this.radius,
+    required this.shadowOffset,
+  });
+
+  @override
+  State<_HardShadowButton> createState() => _HardShadowButtonState();
+}
+
+class _HardShadowButtonState extends State<_HardShadowButton> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (!widget.enabled || _pressed == value) return;
+    setState(() => _pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final offset = _pressed ? 1.5 : widget.shadowOffset;
+
+    return Semantics(
+      button: true,
+      enabled: widget.enabled,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => _setPressed(true),
+        onTapCancel: () => _setPressed(false),
+        onTapUp: (_) => _setPressed(false),
+        onTap: widget.enabled ? widget.onPressed : null,
+        child: AnimatedScale(
+          scale: _pressed ? 0.985 : 1,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOutCubic,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              color: widget.backgroundColor,
+              borderRadius: BorderRadius.circular(widget.radius),
+              border: Border.all(
+                color: AppColors.ink,
+                width: AppStroke.strong,
+              ),
+              boxShadow: AppShadows.hard(offset: offset),
+            ),
+            child: Center(child: widget.child),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -149,7 +216,11 @@ class _ButtonContent extends StatelessWidget {
         ],
         Text(
           label,
-          style: AppTypography.button.copyWith(color: color),
+          style: GoogleFonts.blackHanSans(
+            color: color,
+            fontSize: 18,
+            letterSpacing: 0,
+          ),
         ),
       ],
     );
@@ -169,7 +240,7 @@ class AppIconCircleButton extends StatelessWidget {
     required this.icon,
     this.onTap,
     this.size = 44,
-    this.backgroundColor = AppColors.surfaceMuted,
+    this.backgroundColor = AppColors.surface,
     this.foregroundColor = AppColors.ink,
     this.child,
   });
@@ -187,6 +258,11 @@ class AppIconCircleButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: backgroundColor,
             shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.ink,
+              width: AppStroke.strong,
+            ),
+            boxShadow: AppShadows.hard(offset: 2),
           ),
           child: Center(
             child: child ?? Icon(icon, size: 20, color: foregroundColor),
@@ -226,8 +302,8 @@ class AppModalSurface extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: radius,
         border: Border.all(
-          color: AppColors.borderSoft,
-          width: AppStroke.soft,
+          color: AppColors.ink,
+          width: AppStroke.strong,
         ),
         boxShadow: elevated ? AppShadows.liftedCard : AppShadows.softCard,
       ),

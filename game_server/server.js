@@ -151,8 +151,33 @@ function hasValidMove(board, blockType) {
   return false;
 }
 
+function oneGapWallCandidates(board, wall) {
+  return [
+    { x: wall.x - 2, y: wall.y },
+    { x: wall.x + 2, y: wall.y },
+    { x: wall.x, y: wall.y - 2 },
+    { x: wall.x, y: wall.y + 2 },
+  ].filter((cell) => (
+    cell.x >= 0 &&
+    cell.x < BOARD_SIZE &&
+    cell.y >= 0 &&
+    cell.y < BOARD_SIZE &&
+    board[cell.y][cell.x] === 'empty'
+  ));
+}
+
 function addRandomWalls(room) {
   while (room.walls.length < 2) {
+    if (room.walls.length === 1) {
+      const candidates = oneGapWallCandidates(room.board, room.walls[0]);
+      if (candidates.length > 0) {
+        const wall = candidates[Math.floor(Math.random() * candidates.length)];
+        room.board[wall.y][wall.x] = 'wall';
+        room.walls.push(wall);
+        continue;
+      }
+    }
+
     const x = Math.floor(Math.random() * BOARD_SIZE);
     const y = Math.floor(Math.random() * BOARD_SIZE);
     if (room.board[y][x] !== 'empty') continue;
@@ -216,6 +241,7 @@ function processExplosions(board) {
 function createPlayer(socket, data, role) {
   return {
     socketId: socket.id,
+    clientId: String(data.clientId || socket.id),
     userId: String(data.userId || socket.id),
     nickname: String(data.nickname || 'Player'),
     role,
@@ -267,9 +293,13 @@ function joinRoom(socket, data = {}) {
   if (!room) return emitError(socket, '방을 찾을 수 없습니다.', 'room_not_found');
 
   const userId = String(data.userId || socket.id);
-  const existing = room.players.find((player) => player.userId === userId);
+  const clientId = data.clientId ? String(data.clientId) : null;
+  const existing = room.players.find((player) => (
+    clientId ? player.clientId === clientId : player.userId === userId
+  ));
   if (existing) {
     existing.socketId = socket.id;
+    existing.clientId = clientId || existing.clientId;
     existing.connected = true;
     socket.join(room.roomId);
     emitRoom(room);
@@ -285,9 +315,11 @@ function joinRoom(socket, data = {}) {
   startSelecting(room);
 }
 
-function removeFromQueue(socketId, userId) {
+function removeFromQueue(socketId, userId, clientId) {
   const index = waitingQueue.findIndex((player) => (
-    player.socketId === socketId || (userId && player.userId === userId)
+    player.socketId === socketId ||
+    (clientId && player.clientId === clientId) ||
+    (userId && player.userId === userId)
   ));
   if (index !== -1) waitingQueue.splice(index, 1);
 }
@@ -346,17 +378,17 @@ io.on('connection', (socket) => {
   });
 
   socket.on('create_room', (data) => {
-    removeFromQueue(socket.id, data?.userId);
+    removeFromQueue(socket.id, data?.userId, data?.clientId);
     createRoom(socket, data || {});
   });
 
   socket.on('join_room', (data) => {
-    removeFromQueue(socket.id, data?.userId);
+    removeFromQueue(socket.id, data?.userId, data?.clientId);
     joinRoom(socket, data || {});
   });
 
   socket.on('join_queue', (data = {}) => {
-    removeFromQueue(socket.id);
+    removeFromQueue(socket.id, null, data.clientId);
     const player = createPlayer(socket, data, 'player1');
     waitingQueue.push(player);
     console.log(`[queue] ${player.nickname} (${player.userId}) joined; waiting=${waitingQueue.length}`);
@@ -388,7 +420,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('cancel_queue', (data = {}) => {
-    removeFromQueue(socket.id, data.userId);
+    removeFromQueue(socket.id, data.userId, data.clientId);
     socket.emit('queue_state', { waiting: false });
     console.log(`[queue] ${data.userId || socket.id} cancelled; waiting=${waitingQueue.length}`);
   });
@@ -483,10 +515,14 @@ io.on('connection', (socket) => {
   });
 
   socket.on('leave_room', (data = {}) => {
-    removeFromQueue(socket.id, data.userId);
+    removeFromQueue(socket.id, data.userId, data.clientId);
     const room = rooms.get(data.roomId);
     if (!room) return;
-    const player = room.players.find((p) => p.socketId === socket.id || p.userId === data.userId);
+    const player = room.players.find((p) => (
+      p.socketId === socket.id ||
+      (data.clientId && p.clientId === data.clientId) ||
+      p.userId === data.userId
+    ));
     if (!player) return;
     socket.leave(room.roomId);
     if (room.status === 'waiting') {
@@ -501,9 +537,12 @@ io.on('connection', (socket) => {
   socket.on('reconnect_room', (data = {}) => {
     const room = rooms.get(data.roomId);
     if (!room) return emitError(socket, '방을 찾을 수 없습니다.', 'room_not_found');
-    const player = room.players.find((p) => p.userId === data.userId);
+    const player = room.players.find((p) => (
+      data.clientId ? p.clientId === data.clientId : p.userId === data.userId
+    ));
     if (!player) return emitError(socket, '플레이어를 찾을 수 없습니다.', 'not_in_room');
     player.socketId = socket.id;
+    player.clientId = data.clientId || player.clientId;
     player.connected = true;
     socket.join(room.roomId);
     emitRoom(room);

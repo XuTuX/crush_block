@@ -4,7 +4,6 @@ import 'package:crush_block/services/auth_service.dart';
 import 'package:crush_block/services/database_service.dart';
 import 'package:crush_block/services/settings_service.dart';
 import 'package:crush_block/services/multiplayer_service.dart';
-import 'package:crush_block/services/shop_service.dart';
 import 'package:crush_block/theme/app_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -31,27 +30,22 @@ void main() async {
   );
 
   final settingsService = await SettingsService().init();
-  final shopService = await ShopService().init();
 
   runApp(CrushBlockApp(
     settingsService: settingsService,
-    shopService: shopService,
   ));
 }
 
 class AppBinding extends Bindings {
   final SettingsService settingsService;
-  final ShopService shopService;
 
   AppBinding({
     required this.settingsService,
-    required this.shopService,
   });
 
   @override
   void dependencies() {
     Get.put<SettingsService>(settingsService, permanent: true);
-    Get.put<ShopService>(shopService, permanent: true);
     Get.put(DatabaseService(), permanent: true);
     Get.put(MultiplayerService(), permanent: true);
     Get.put(AuthService(), permanent: true);
@@ -107,12 +101,10 @@ String? _validateSupabaseConfig({
 
 class CrushBlockApp extends StatelessWidget {
   final SettingsService settingsService;
-  final ShopService shopService;
 
   const CrushBlockApp({
     super.key,
     required this.settingsService,
-    required this.shopService,
   });
 
   @override
@@ -122,7 +114,6 @@ class CrushBlockApp extends StatelessWidget {
       title: 'Crush Block',
       initialBinding: AppBinding(
         settingsService: settingsService,
-        shopService: shopService,
       ),
       theme: AppTheme.light,
       navigatorKey: Get.key, // GetX 글로벌 키 설정

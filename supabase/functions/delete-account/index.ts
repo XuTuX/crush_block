@@ -158,14 +158,6 @@ async function cleanupUserData(
     "user_id",
     userId,
   );
-  await deleteWhereUserId(adminClient, "user_shop_data", "user_id", userId);
-  await deleteWhereUserId(
-    adminClient,
-    "user_store_purchases",
-    "user_id",
-    userId,
-  );
-  await deleteWhereUserId(adminClient, "scores", "user_id", userId);
   await deleteWhereUserId(adminClient, "profiles", "id", userId);
 }
 

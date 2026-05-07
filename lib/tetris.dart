@@ -6,8 +6,9 @@ class TetrisBlock extends StatelessWidget {
   final List<Offset> shape;
   final Color color;
   final String? tokenPath;
-  final String? portraitPath;
   final bool showBackground;
+  final int columns;
+  final int rows;
 
   const TetrisBlock({
     super.key,
@@ -15,14 +16,15 @@ class TetrisBlock extends StatelessWidget {
     required this.color,
     required this.cellSize,
     this.tokenPath,
-    this.portraitPath,
     this.showBackground = true,
+    this.columns = 3,
+    this.rows = 3,
   });
 
   @override
   Widget build(BuildContext context) {
-    double blockWidth = 3 * cellSize;
-    double blockHeight = 3 * cellSize;
+    final blockWidth = columns * cellSize;
+    final blockHeight = rows * cellSize;
 
     return SizedBox(
       width: blockWidth,
@@ -39,19 +41,18 @@ class TetrisBlock extends StatelessWidget {
                 alignment: Alignment.center,
                 children: [
                   if (showBackground || tokenPath == null)
-                    Container(
-                      width: cellSize,
-                      height: cellSize,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.rectangle,
-                        color: color.withValues(alpha: 1.0),
+                    Padding(
+                      padding: EdgeInsets.all(cellSize * 0.035),
+                      child: _BlockCell(
+                        color: color,
+                        cellSize: cellSize,
                       ),
                     ),
                   if (tokenPath != null)
                     Image.asset(
                       tokenPath!,
-                      width: cellSize * 0.85,
-                      height: cellSize * 0.85,
+                      width: cellSize * 0.78,
+                      height: cellSize * 0.78,
                       fit: BoxFit.contain,
                     ),
                 ],
@@ -59,6 +60,91 @@ class TetrisBlock extends StatelessWidget {
             ),
           );
         }).toList(),
+      ),
+    );
+  }
+}
+
+class _BlockCell extends StatelessWidget {
+  final Color color;
+  final double cellSize;
+
+  const _BlockCell({
+    required this.color,
+    required this.cellSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(cellSize * 0.16);
+    final borderWidth = cellSize < 18 ? 1.1 : 1.8;
+    final shadowOffset = cellSize < 18 ? 1.1 : 2.2;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1A1A1A).withValues(alpha: 0.9),
+            blurRadius: 0,
+            offset: Offset(shadowOffset, shadowOffset),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color.lerp(color, Colors.white, 0.34)!,
+                      color,
+                      Color.lerp(color, const Color(0xFF1A1A1A), 0.16)!,
+                    ],
+                    stops: const [0, 0.55, 1],
+                  ),
+                  borderRadius: radius,
+                  border: Border.all(
+                    color: const Color(0xFF1A1A1A),
+                    width: borderWidth,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: cellSize * 0.16,
+              top: cellSize * 0.14,
+              right: cellSize * 0.24,
+              height: cellSize * 0.18,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.26),
+                  borderRadius: BorderRadius.circular(cellSize),
+                ),
+              ),
+            ),
+            Positioned(
+              left: borderWidth,
+              right: borderWidth,
+              bottom: borderWidth,
+              height: cellSize * 0.16,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A1A).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(cellSize * 0.12),
+                    bottomRight: Radius.circular(cellSize * 0.12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
