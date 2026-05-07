@@ -370,8 +370,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
           controller.isMyTurn.value && !controller.gameFinishedRx.value;
 
       return ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: isLandscape ? double.infinity : 300,
+        constraints: const BoxConstraints(
+          maxWidth: 300,
         ),
         child: Container(
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),

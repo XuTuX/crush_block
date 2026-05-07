@@ -9,6 +9,8 @@ import 'package:crush_block/theme/app_design_system.dart';
 import 'package:crush_block/theme/app_typography.dart';
 import 'package:crush_block/utils/device_utils.dart';
 import 'package:crush_block/widgets/brand_assets.dart';
+import 'package:crush_block/widgets/dialogs/custom_dialog.dart';
+import 'package:crush_block/widgets/dialogs/edit_nickname_dialog.dart';
 import 'package:crush_block/widgets/home_screen/background_painter.dart';
 import 'package:crush_block/widgets/match_found_overlay.dart';
 import 'package:flutter/material.dart';
@@ -90,6 +92,13 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Positioned.fill(
                 child: CustomPaint(painter: GridPatternPainter()),
+              ),
+              Positioned(
+                top: AppSpacing.md,
+                right: AppSpacing.md,
+                child: _SettingsButton(
+                  onPressed: () => _showSettingsSheet(authService),
+                ),
               ),
               SafeArea(
                 child: Center(
@@ -269,6 +278,56 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _showSettingsSheet(AuthService authService) {
+    Get.bottomSheet(
+      _SettingsSheet(authService: authService),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: AppColors.ink.withValues(alpha: 0.36),
+    );
+  }
+
+  Future<void> _showEditNicknameDialog(AuthService authService) async {
+    await Get.dialog(
+      EditNicknameDialog(
+        currentNickname: authService.userNickname.value ?? '',
+        onSave: authService.updateNickname,
+      ),
+      barrierDismissible: false,
+      barrierColor: AppColors.ink.withValues(alpha: 0.5),
+    );
+  }
+
+  void _confirmSignOut(AuthService authService) {
+    showCustomConfirm(
+      '로그아웃',
+      '현재 계정에서 로그아웃할까요?',
+      () async {
+        final error = await authService.signOut();
+        if (error != null) {
+          showCustomAlert('로그아웃 실패', error);
+        }
+      },
+      confirmText: '로그아웃',
+      cancelText: '취소',
+    );
+  }
+
+  void _confirmDeleteAccount(AuthService authService) {
+    showCustomConfirm(
+      '계정 삭제',
+      '계정과 게임 기록이 삭제됩니다. 이 작업은 되돌릴 수 없어요.',
+      () async {
+        final error = await authService.deleteAccount();
+        if (error != null) {
+          showCustomAlert('계정 삭제 실패', error);
+        }
+      },
+      confirmText: '삭제',
+      cancelText: '취소',
+    );
+  }
+
   Future<void> _navigateToRankedGame() async {
     if (!mounted || _navigatedToRankedGame) return;
     _navigatedToRankedGame = true;
@@ -353,6 +412,184 @@ class _HomeScreenState extends State<HomeScreen> {
       return profile['nickname']?.toString() ?? '플레이어';
     }
     return '플레이어';
+  }
+}
+
+class _SettingsButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _SettingsButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Material(
+        color: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: AppColors.borderSoft),
+        ),
+        child: IconButton(
+          tooltip: '설정',
+          icon: const Icon(Icons.settings_rounded),
+          color: AppColors.ink,
+          splashRadius: 22,
+          onPressed: onPressed,
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsSheet extends StatelessWidget {
+  final AuthService authService;
+
+  const _SettingsSheet({required this.authService});
+
+  @override
+  Widget build(BuildContext context) {
+    final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.borderSoft),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '설정',
+                      style: AppTypography.subtitle.copyWith(
+                        color: AppColors.ink,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: '닫기',
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: Get.back,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Obx(() {
+                final nickname = authService.userNickname.value ?? '플레이어';
+                return _SettingsTile(
+                  icon: Icons.person_rounded,
+                  title: nickname,
+                  subtitle: '닉네임',
+                  onTap: () {
+                    Get.back();
+                    homeState?._showEditNicknameDialog(authService);
+                  },
+                );
+              }),
+              const SizedBox(height: 8),
+              _SettingsTile(
+                icon: Icons.logout_rounded,
+                title: '로그아웃',
+                subtitle: '현재 계정에서 나가기',
+                onTap: () {
+                  Get.back();
+                  homeState?._confirmSignOut(authService);
+                },
+              ),
+              const SizedBox(height: 8),
+              _SettingsTile(
+                icon: Icons.delete_outline_rounded,
+                title: '계정 삭제',
+                subtitle: '계정과 기록 삭제',
+                destructive: true,
+                onTap: () {
+                  Get.back();
+                  homeState?._confirmDeleteAccount(authService);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool destructive;
+
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.destructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = destructive ? AppColors.dangerStrong : AppColors.ink;
+
+    return Material(
+      color: destructive ? AppColors.dangerSoft : AppColors.backgroundSoft,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: AppTypography.caption.copyWith(
+                        color: destructive
+                            ? AppColors.dangerStrong.withValues(alpha: 0.72)
+                            : AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: destructive ? color : AppColors.textSubtle,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
