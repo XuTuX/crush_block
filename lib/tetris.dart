@@ -76,74 +76,16 @@ class _BlockCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(cellSize * 0.16);
-    final borderWidth = cellSize < 18 ? 1.1 : 1.8;
-    final shadowOffset = cellSize < 18 ? 1.1 : 2.2;
+    final radius = BorderRadius.circular(cellSize * 0.14);
+    final borderWidth = cellSize < 18 ? 1.0 : 1.3;
 
-    return DecoratedBox(
+    return Container(
       decoration: BoxDecoration(
+        color: color,
         borderRadius: radius,
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1A1A1A).withValues(alpha: 0.9),
-            blurRadius: 0,
-            offset: Offset(shadowOffset, shadowOffset),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: radius,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color.lerp(color, Colors.white, 0.34)!,
-                      color,
-                      Color.lerp(color, const Color(0xFF1A1A1A), 0.16)!,
-                    ],
-                    stops: const [0, 0.55, 1],
-                  ),
-                  borderRadius: radius,
-                  border: Border.all(
-                    color: const Color(0xFF1A1A1A),
-                    width: borderWidth,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: cellSize * 0.16,
-              top: cellSize * 0.14,
-              right: cellSize * 0.24,
-              height: cellSize * 0.18,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.26),
-                  borderRadius: BorderRadius.circular(cellSize),
-                ),
-              ),
-            ),
-            Positioned(
-              left: borderWidth,
-              right: borderWidth,
-              bottom: borderWidth,
-              height: cellSize * 0.16,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(cellSize * 0.12),
-                    bottomRight: Radius.circular(cellSize * 0.12),
-                  ),
-                ),
-              ),
-            ),
-          ],
+        border: Border.all(
+          color: const Color(0xFF1A1A1A).withValues(alpha: 0.28),
+          width: borderWidth,
         ),
       ),
     );

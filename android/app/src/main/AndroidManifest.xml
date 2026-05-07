@@ -8,7 +8,8 @@
     <application
         android:label="Crush Block"
         android:icon="@mipmap/launcher_icon"
-        android:allowBackup="false">
+        android:allowBackup="false"
+        android:usesCleartextTraffic="true">
 
         <!-- MainActivity 설정 -->
         <activity

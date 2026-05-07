@@ -264,7 +264,7 @@ class AppTheme {
           disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.45),
           disabledForegroundColor: AppColors.onPrimary.withValues(alpha: 0.7),
           elevation: 0,
-          minimumSize: const Size.fromHeight(56),
+          minimumSize: const Size(0, 56),
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -281,7 +281,7 @@ class AppTheme {
           backgroundColor: AppColors.surface,
           foregroundColor: AppColors.ink,
           disabledForegroundColor: AppColors.textSubtle,
-          minimumSize: const Size.fromHeight(56),
+          minimumSize: const Size(0, 56),
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           side: const BorderSide(
             color: AppColors.ink,
@@ -296,7 +296,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.ink,
-          minimumSize: const Size.fromHeight(56),
+          minimumSize: const Size(0, 56),
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.lg),

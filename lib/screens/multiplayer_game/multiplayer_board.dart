@@ -50,24 +50,33 @@ class MultiplayerBoard extends StatelessWidget {
               final isHover = controller.hoverCells.contains(index);
               final isPlaced = controller.lastPlacedCells.contains(index);
               final isCleared = controller.lastClearedCells.contains(index);
+              final isUnavailable = _isUnavailable(cell);
               final color = _cellColor(cell, isHover);
-              final isFilled = cell != 'empty' || isHover;
+              final isFilled = cell != 'empty' || isHover || isUnavailable;
 
               return AnimatedScale(
                 scale: isPlaced ? 1.02 : 1,
-                duration: const Duration(milliseconds: 120),
-                curve: Curves.easeOut,
+                duration: const Duration(milliseconds: 140),
+                curve: Curves.easeOutCubic,
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 120),
-                  curve: Curves.easeOut,
+                  duration: const Duration(milliseconds: 140),
+                  curve: Curves.easeOutCubic,
                   margin: const EdgeInsets.all(1),
                   decoration: _cellDecoration(
+                    cell: cell,
                     color: color,
                     isFilled: isFilled,
                     isHover: isHover,
                     isCleared: isCleared,
+                    isPlaced: isPlaced,
+                    isUnavailable: isUnavailable,
                   ),
-                  child: _cellMarker(cell, isHover),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(
+                      isFilled ? cellSize * 0.18 : cellSize * 0.12,
+                    ),
+                    child: Center(child: _cellMarker(cell, isHover)),
+                  ),
                 ),
               );
             });
@@ -78,7 +87,8 @@ class MultiplayerBoard extends StatelessWidget {
   }
 
   Color _cellColor(String cell, bool isHover) {
-    if (cell == 'wall') return AppColors.ink;
+    if (cell == 'wall') return const Color(0xFF40444C);
+    if (_isUnavailable(cell)) return AppColors.backgroundSoft;
     if (cell == controller.myRole) return controller.myBlockColor.value;
     if (cell == controller.opponentRole) {
       return controller.opponentBlockColor.value;
@@ -91,32 +101,72 @@ class MultiplayerBoard extends StatelessWidget {
   }
 
   BoxDecoration _cellDecoration({
+    required String cell,
     required Color color,
     required bool isFilled,
     required bool isHover,
     required bool isCleared,
+    required bool isPlaced,
+    required bool isUnavailable,
   }) {
+    final radius = BorderRadius.circular(
+      isFilled ? cellSize * 0.18 : cellSize * 0.12,
+    );
+
     if (!isFilled) {
       return BoxDecoration(
-        color: AppColors.backgroundSoft,
-        borderRadius: BorderRadius.circular(3),
+        color: AppColors.surface,
+        borderRadius: radius,
         border: Border.all(
-          color: AppColors.borderSoft.withValues(alpha: 0.7),
+          color: AppColors.borderSoft,
+          width: 1,
         ),
       );
     }
 
-    final baseColor = isHover ? color.withValues(alpha: 0.58) : color;
+    if (cell == 'wall') {
+      return BoxDecoration(
+        color: color,
+        borderRadius: radius,
+        border: Border.all(
+          color: AppColors.ink.withValues(alpha: 0.36),
+          width: 1.2,
+        ),
+      );
+    }
+
+    if (isUnavailable) {
+      return BoxDecoration(
+        color: color,
+        borderRadius: radius,
+        border: Border.all(
+          color: AppColors.ink.withValues(alpha: 0.08),
+          width: 1,
+        ),
+      );
+    }
+
+    if (isHover) {
+      return BoxDecoration(
+        color: color.withValues(alpha: 0.22),
+        borderRadius: radius,
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.72),
+          width: 1.4,
+        ),
+      );
+    }
+
     return BoxDecoration(
-      color: baseColor,
-      borderRadius: BorderRadius.circular(4),
+      color: color,
+      borderRadius: radius,
       border: Border.all(
         color: isCleared
             ? AppColors.success
-            : isHover
+            : isPlaced
                 ? AppColors.primary
                 : AppColors.ink.withValues(alpha: 0.24),
-        width: isHover || isCleared ? 1.4 : 1,
+        width: isCleared || isPlaced ? 1.7 : 1.1,
       ),
     );
   }
@@ -125,35 +175,47 @@ class MultiplayerBoard extends StatelessWidget {
     if (isHover) {
       return Icon(
         Icons.add_rounded,
-        color: AppColors.primary.withValues(alpha: 0.82),
-        size: cellSize * 0.48,
+        color: AppColors.primary.withValues(alpha: 0.78),
+        size: cellSize * 0.42,
       );
     }
 
     if (cell == controller.myRole) {
       return Icon(
         Icons.circle_rounded,
-        color: AppColors.onPrimary.withValues(alpha: 0.92),
-        size: cellSize * 0.42,
+        color: AppColors.onPrimary.withValues(alpha: 0.86),
+        size: cellSize * 0.34,
       );
     }
 
     if (cell == controller.opponentRole) {
       return Icon(
         Icons.change_history_rounded,
-        color: AppColors.onPrimary.withValues(alpha: 0.94),
-        size: cellSize * 0.5,
+        color: AppColors.onPrimary.withValues(alpha: 0.9),
+        size: cellSize * 0.4,
       );
     }
 
     if (cell == 'wall') {
       return Icon(
         Icons.close_rounded,
-        color: AppColors.surface,
-        size: cellSize * 0.52,
+        color: AppColors.surface.withValues(alpha: 0.74),
+        size: cellSize * 0.38,
+      );
+    }
+
+    if (_isUnavailable(cell)) {
+      return Icon(
+        Icons.block_rounded,
+        color: AppColors.textSubtle,
+        size: cellSize * 0.34,
       );
     }
 
     return null;
+  }
+
+  bool _isUnavailable(String cell) {
+    return cell == 'blocked' || cell == 'disabled' || cell == 'unavailable';
   }
 }

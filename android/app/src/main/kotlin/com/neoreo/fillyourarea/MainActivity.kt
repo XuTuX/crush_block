@@ -1,4 +1,4 @@
-package com.neoreo.linkyourarea
+package com.neoreo.fillyourarea
 
 import android.content.pm.ActivityInfo
 import android.os.Bundle

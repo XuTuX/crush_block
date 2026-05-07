@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../constant.dart';
-import '../services/multiplayer_service.dart';
 import '../controllers/multiplayer_game_controller.dart';
-import '../theme/app_components.dart';
+import '../services/multiplayer_service.dart';
 import '../theme/app_design_system.dart';
 import '../theme/app_typography.dart';
 import 'multiplayer_game/mp_game_over_overlay.dart';
 import 'multiplayer_game/mp_leave_dialog.dart';
 import 'multiplayer_game/mp_shared_blocks.dart';
 import 'multiplayer_game/multiplayer_board.dart';
-import '../widgets/mp_buttons.dart';
 
 class MultiplayerGameScreen extends StatefulWidget {
   final String roomId;
@@ -70,68 +69,34 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
         if (didPop) return;
         if (controller.gameFinished) {
           await _service.leaveRoom();
-          if (Get.key.currentState?.canPop() ?? false) {
-            Get.back();
-          }
+          if (Get.key.currentState?.canPop() ?? false) Get.back();
         } else {
           showMpLeaveDialog(context);
         }
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
-        appBar: _buildAppBar(),
-        body: Obx(() {
-          final status = _service.roomStatus.value;
-          return Stack(
-            children: [
-              if (status == 'selecting') _buildSelectionPhase(),
-              if (status == 'playing' || status == 'finished')
-                _buildPlayingPhase(),
-              if (status == 'finished')
-                MpGameOverOverlay(
-                  controller: controller,
-                  mode: widget.mode,
-                  myNickname: widget.myNickname,
-                  opponentNickname: widget.opponentNickname,
-                  roomId: widget.roomId,
-                ),
-            ],
-          );
-        }),
-      ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: AppColors.background,
-      elevation: 0,
-      automaticallyImplyLeading: false,
-      surfaceTintColor: Colors.transparent,
-      titleSpacing: 20,
-      title: Text(
-        'Crush Block',
-        style: AppTypography.subtitle.copyWith(
-          fontWeight: FontWeight.w800,
-          color: AppColors.ink,
+        body: SafeArea(
+          child: Obx(() {
+            final status = _service.roomStatus.value;
+            return Stack(
+              children: [
+                if (status == 'selecting') _buildSelectionPhase(),
+                if (status == 'playing' || status == 'finished')
+                  _buildPlayingPhase(),
+                if (status == 'finished')
+                  MpGameOverOverlay(
+                    controller: controller,
+                    mode: widget.mode,
+                    myNickname: widget.myNickname,
+                    opponentNickname: widget.opponentNickname,
+                    roomId: widget.roomId,
+                  ),
+              ],
+            );
+          }),
         ),
       ),
-      actions: [
-        MpAppBarButton(
-          icon: Icons.home_rounded,
-          onPressed: () async {
-            if (controller.gameFinished) {
-              await _service.leaveRoom();
-              if (Get.key.currentState?.canPop() ?? false) {
-                Get.back();
-              }
-            } else {
-              showMpLeaveDialog(context);
-            }
-          },
-        ),
-        const SizedBox(width: 16),
-      ],
     );
   }
 
@@ -143,14 +108,12 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '$mySelection 블록 선택 완료',
-              style: AppTypography.title.copyWith(
-                color: AppColors.primary,
-              ),
+              '$mySelection 선택 완료',
+              style: AppTypography.title.copyWith(color: AppColors.primary),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
-              '상대방을 기다리는 중...',
+              '상대방을 기다리는 중',
               style: AppTypography.body.copyWith(color: AppColors.textMuted),
             ),
           ],
@@ -160,45 +123,49 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
     final blocks = ['I', 'O', 'T', 'L', 'J', 'S', 'Z'];
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '블록을 선택하세요',
-            style: AppTypography.title.copyWith(color: AppColors.ink),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          Wrap(
-            spacing: AppSpacing.md,
-            runSpacing: AppSpacing.md,
-            alignment: WrapAlignment.center,
-            children: blocks
-                .map((block) => GestureDetector(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '블록 선택',
+              style: AppTypography.title.copyWith(color: AppColors.ink),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              alignment: WrapAlignment.center,
+              children: blocks
+                  .map(
+                    (block) => InkWell(
+                      borderRadius: BorderRadius.circular(10),
                       onTap: () => controller.selectBlock(block),
                       child: Container(
-                        width: 68,
-                        height: 68,
+                        width: 62,
+                        height: 62,
                         decoration: BoxDecoration(
                           color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.borderSoft,
-                            width: 1,
-                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.borderSoft),
                         ),
                         child: Center(
                           child: Text(
                             block,
-                            style: AppTypography.title.copyWith(
+                            style: AppTypography.subtitle.copyWith(
                               color: AppColors.ink,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ),
                       ),
-                    ))
-                .toList(),
-          ),
-        ],
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -212,60 +179,73 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
         final isLandscape = constraints.maxWidth > constraints.maxHeight;
         final gridSize = _calculateGridSize(constraints, isLandscape);
         final cellSize = gridSize / gridColumns;
+        final matchHeader = _buildMatchHeader();
         final boardPanel = _buildBoardPanel(gridSize, cellSize);
+        final boardKey = _BoardKey();
+        final statusLine = _buildStatusLine();
         final blockDock = _buildBlockDock(cellSize, isLandscape);
-        final statusPanel = _buildGameStatusPanel();
-        final legend = _buildLegend();
+        final bottomActions = _buildBottomActions();
 
         if (isLandscape) {
-          return Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    statusPanel,
-                    const SizedBox(height: 12),
-                    boardPanel,
-                  ],
-                ),
-                const SizedBox(width: 24),
-                SizedBox(
-                  width: 240,
-                  child: Column(
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Column(
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      legend,
-                      const SizedBox(height: 18),
-                      blockDock,
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: gridSize + 12),
+                        child: matchHeader,
+                      ),
+                      const SizedBox(height: 12),
+                      boardPanel,
+                      const SizedBox(height: 8),
+                      boardKey,
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(width: 24),
+                  SizedBox(
+                    width: 240,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        statusLine,
+                        const SizedBox(height: 14),
+                        blockDock,
+                        const SizedBox(height: 12),
+                        bottomActions,
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }
 
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-                child: statusPanel,
-              ),
-              const SizedBox(height: 12),
-              boardPanel,
-              const SizedBox(height: 14),
-              blockDock,
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-                child: legend,
-              ),
-            ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                matchHeader,
+                const SizedBox(height: 12),
+                boardPanel,
+                const SizedBox(height: 8),
+                boardKey,
+                const SizedBox(height: 16),
+                statusLine,
+                const SizedBox(height: 10),
+                blockDock,
+                const SizedBox(height: 10),
+                bottomActions,
+              ],
+            ),
           ),
         );
       },
@@ -281,28 +261,70 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
       return gridSize;
     }
 
-    var gridSize = constraints.maxWidth * 0.86;
+    var gridSize = constraints.maxWidth * 0.9;
     if (constraints.maxWidth > 600) {
-      gridSize = constraints.maxWidth * 0.6;
+      gridSize = constraints.maxWidth * 0.58;
       if (gridSize > 600) gridSize = 600;
     }
-    final maxGridHeight = constraints.maxHeight * 0.54;
+    final maxGridHeight = constraints.maxHeight * 0.48;
     if (gridSize > maxGridHeight) gridSize = maxGridHeight;
     return gridSize;
   }
 
+  Widget _buildMatchHeader() {
+    return Obx(() {
+      final isMyTurn = controller.isMyTurn.value;
+      final finished = controller.gameFinishedRx.value;
+
+      return Row(
+        children: [
+          Expanded(
+            child: _PlayerChip(
+              nickname: widget.myNickname,
+              label: '나',
+              color: AppColors.primary,
+              icon: Icons.circle_rounded,
+              active: isMyTurn && !finished,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: _TurnBadge(
+              label: finished
+                  ? '종료'
+                  : isMyTurn
+                      ? '내 턴'
+                      : '상대 턴',
+              active: isMyTurn && !finished,
+            ),
+          ),
+          Expanded(
+            child: _PlayerChip(
+              nickname: widget.opponentNickname,
+              label: '상대',
+              color: AppColors.tileCoral,
+              icon: Icons.change_history_rounded,
+              active: !isMyTurn && !finished,
+              alignEnd: true,
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
   Widget _buildBoardPanel(double gridSize, double cellSize) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        border: Border.all(color: AppColors.borderSoft),
         borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.borderSoft),
       ),
       child: SizedBox(
         key: _gridKey,
-        height: gridSize,
         width: gridSize,
+        height: gridSize,
         child: MultiplayerBoard(
           controller: controller,
           gridSize: gridSize,
@@ -313,24 +335,29 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     );
   }
 
-  Widget _buildBlockDock(double cellSize, bool isLandscape) {
-    final controls = Obx(() {
-      final canRotate =
-          controller.isMyTurn.value && !controller.gameFinishedRx.value;
-      return IconButton(
-        tooltip: '회전',
-        icon: const Icon(Icons.rotate_right_rounded),
-        onPressed: canRotate
-            ? () {
-                controller.clearHover();
-                setState(() {
-                  _currentRotation = (_currentRotation + 1) % rotationUnit;
-                });
-              }
-            : null,
+  Widget _buildStatusLine() {
+    return Obx(() {
+      final isMyTurn = controller.isMyTurn.value;
+      final statusText = controller.gameFinishedRx.value
+          ? _winnerText()
+          : isMyTurn
+              ? '블록을 보드에 놓으세요'
+              : '상대가 두는 중입니다';
+
+      return Text(
+        statusText,
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: AppTypography.bodySmall.copyWith(
+          color: isMyTurn ? AppColors.primary : AppColors.textMuted,
+          fontWeight: FontWeight.w800,
+        ),
       );
     });
+  }
 
+  Widget _buildBlockDock(double cellSize, bool isLandscape) {
     final block = MpSharedBlocks(
       controller: controller,
       cellSize: cellSize,
@@ -338,245 +365,328 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
       rotation: _currentRotation,
     );
 
-    if (isLandscape) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          controls,
-          const SizedBox(height: 12),
-          block,
-        ],
-      );
-    }
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        block,
-        const SizedBox(width: 10),
-        controls,
-      ],
-    );
-  }
-
-  Widget _buildGameStatusPanel() {
     return Obx(() {
-      final myRole = controller.myRole;
-      final isMyTurn = controller.isMyTurn.value;
-      final turnRole = _service.currentTurn.value;
-      final turnName =
-          turnRole == myRole ? widget.myNickname : widget.opponentNickname;
-      final statusText = controller.gameFinishedRx.value
-          ? _winnerText()
-          : isMyTurn
-              ? '내 차례입니다. 블록을 보드에 놓으세요.'
-              : '상대 차례입니다. 잠시 기다려 주세요.';
+      final canPlay =
+          controller.isMyTurn.value && !controller.gameFinishedRx.value;
 
-      return Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.borderSoft),
+      return ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: isLandscape ? double.infinity : 300,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                _TurnDot(active: isMyTurn),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    '현재 턴: $turnName',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.subtitle.copyWith(
-                      color: AppColors.ink,
-                      fontWeight: FontWeight.w800,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.borderSoft),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      canPlay ? '둘 블록' : '대기',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.textMuted,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              statusText,
-              style: AppTypography.bodySmall.copyWith(
-                color: isMyTurn ? AppColors.primary : AppColors.textMuted,
-                fontWeight: FontWeight.w700,
+                  IconButton(
+                    tooltip: '회전',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 32,
+                      height: 32,
+                    ),
+                    iconSize: 19,
+                    color: AppColors.ink,
+                    disabledColor: AppColors.textSubtle,
+                    icon: const Icon(Icons.rotate_right_rounded),
+                    onPressed: canPlay
+                        ? () {
+                            controller.clearHover();
+                            setState(() {
+                              _currentRotation =
+                                  (_currentRotation + 1) % rotationUnit;
+                            });
+                          }
+                        : null,
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: AppActionButton(
-                    label: '다시 시작',
-                    icon: Icons.refresh_rounded,
-                    height: 42,
-                    tone: AppButtonTone.secondary,
-                    onPressed: _restartGame,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: AppActionButton(
-                    label: '나가기',
-                    icon: Icons.exit_to_app_rounded,
-                    height: 42,
-                    tone: AppButtonTone.secondary,
-                    onPressed: () {
-                      if (controller.gameFinished) {
-                        _leaveFinishedGame();
-                      } else {
-                        showMpLeaveDialog(context);
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
+              const SizedBox(height: 4),
+              block,
+            ],
+          ),
         ),
       );
     });
+  }
+
+  Widget _buildBottomActions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _QuietAction(
+          label: '다시 시작',
+          icon: Icons.refresh_rounded,
+          onPressed: _restartGame,
+        ),
+        const SizedBox(width: 8),
+        _QuietAction(
+          label: '나가기',
+          icon: Icons.logout_rounded,
+          onPressed: () {
+            if (controller.gameFinished) {
+              _leaveFinishedGame();
+            } else {
+              showMpLeaveDialog(context);
+            }
+          },
+        ),
+      ],
+    );
   }
 
   Future<void> _restartGame() async {
     await _service.leaveRoom(countAsForfeit: !controller.gameFinished);
     _service.configureMode(MultiplayerMode.ranked);
     await _service.quickMatch();
-    if (Get.key.currentState?.canPop() ?? false) {
-      Get.back();
-    }
+    if (Get.key.currentState?.canPop() ?? false) Get.back();
   }
 
   Future<void> _leaveFinishedGame() async {
     await _service.leaveRoom();
-    if (Get.key.currentState?.canPop() ?? false) {
-      Get.back();
-    }
+    if (Get.key.currentState?.canPop() ?? false) Get.back();
   }
 
   String _winnerText() {
     final won = controller.iWon.value;
-    if (won == true) return '게임 종료: 내가 이겼습니다.';
-    if (won == false) return '게임 종료: 상대가 이겼습니다.';
-    return '게임 종료: 무승부입니다.';
+    if (won == true) return '내가 이겼습니다';
+    if (won == false) return '상대가 이겼습니다';
+    return '무승부입니다';
   }
+}
 
-  Widget _buildLegend() {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+class _PlayerChip extends StatelessWidget {
+  final String nickname;
+  final String label;
+  final Color color;
+  final IconData icon;
+  final bool active;
+  final bool alignEnd;
+
+  const _PlayerChip({
+    required this.nickname,
+    required this.label,
+    required this.color,
+    required this.icon,
+    required this.active,
+    this.alignEnd = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 160),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: active ? color.withValues(alpha: 0.08) : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(
+          color: active ? color.withValues(alpha: 0.32) : AppColors.borderSoft,
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Row(
+        mainAxisAlignment:
+            alignEnd ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
-          Text(
-            '블록 안내',
-            style: AppTypography.label.copyWith(color: AppColors.textMuted),
+          if (!alignEnd) _BlockMark(color: color, icon: icon),
+          if (!alignEnd) const SizedBox(width: 7),
+          Flexible(
+            child: Column(
+              crossAxisAlignment:
+                  alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: AppTypography.tiny.copyWith(
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  nickname,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.ink,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          const Wrap(
-            spacing: AppSpacing.md,
-            runSpacing: AppSpacing.sm,
-            children: [
-              _LegendItem(
-                label: '내 블록',
-                color: AppColors.primary,
-                icon: Icons.circle_rounded,
-              ),
-              _LegendItem(
-                label: '상대 블록',
-                color: AppColors.tileCoral,
-                icon: Icons.change_history_rounded,
-              ),
-              _LegendItem(
-                label: '빈 칸',
-                color: AppColors.surfaceMuted,
-                icon: Icons.crop_square_rounded,
-              ),
-              _LegendItem(
-                label: '벽',
-                color: AppColors.ink,
-                icon: Icons.close_rounded,
-                dark: true,
-              ),
-              _LegendItem(
-                label: '사용 불가',
-                color: AppColors.backgroundSoft,
-                icon: Icons.block_rounded,
-              ),
-            ],
-          ),
+          if (alignEnd) const SizedBox(width: 7),
+          if (alignEnd) _BlockMark(color: color, icon: icon),
         ],
       ),
     );
   }
 }
 
-class _TurnDot extends StatelessWidget {
+class _TurnBadge extends StatelessWidget {
+  final String label;
   final bool active;
 
-  const _TurnDot({required this.active});
+  const _TurnBadge({
+    required this.label,
+    required this.active,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 12,
-      height: 12,
+      constraints: const BoxConstraints(minWidth: 64),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: active ? AppColors.primary : AppColors.tileCoral,
-        shape: BoxShape.circle,
+        color: active ? AppColors.primary : AppColors.surface,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: active ? AppColors.primary : AppColors.borderSoft,
+        ),
+      ),
+      child: Text(
+        label,
+        textAlign: TextAlign.center,
+        style: AppTypography.caption.copyWith(
+          color: active ? AppColors.onPrimary : AppColors.textMuted,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }
 }
 
-class _LegendItem extends StatelessWidget {
-  final String label;
+class _BlockMark extends StatelessWidget {
   final Color color;
   final IconData icon;
-  final bool dark;
 
-  const _LegendItem({
-    required this.label,
+  const _BlockMark({
     required this.color,
     required this.icon,
-    this.dark = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final foreground = dark ? AppColors.surface : AppColors.ink;
+    return Container(
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.ink.withValues(alpha: 0.16)),
+      ),
+      child: Icon(icon, size: 13, color: AppColors.onPrimary),
+    );
+  }
+}
 
+class _BoardKey extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 10,
+      runSpacing: 6,
+      children: [
+        _KeyItem(label: '빈 칸', color: AppColors.surface),
+        _KeyItem(label: '벽', color: Color(0xFF40444C), icon: Icons.close),
+        _KeyItem(
+          label: '사용 불가',
+          color: AppColors.backgroundSoft,
+          icon: Icons.block_rounded,
+        ),
+      ],
+    );
+  }
+}
+
+class _KeyItem extends StatelessWidget {
+  final String label;
+  final Color color;
+  final IconData? icon;
+
+  const _KeyItem({
+    required this.label,
+    required this.color,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 22,
-          height: 22,
+          width: 14,
+          height: 14,
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(5),
-            border: Border.all(color: AppColors.ink.withValues(alpha: 0.18)),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: AppColors.borderSoft),
           ),
-          child: Icon(icon, size: 13, color: foreground),
+          child: icon == null
+              ? null
+              : Icon(
+                  icon,
+                  size: 9,
+                  color: color == const Color(0xFF40444C)
+                      ? AppColors.surface
+                      : AppColors.textSubtle,
+                ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: 4),
         Text(
           label,
-          style: AppTypography.caption.copyWith(
+          style: AppTypography.tiny.copyWith(
             color: AppColors.textMuted,
             fontWeight: FontWeight.w700,
           ),
         ),
       ],
+    );
+  }
+}
+
+class _QuietAction extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _QuietAction({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 15),
+      label: Text(label),
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.textMuted,
+        minimumSize: const Size(0, 30),
+        visualDensity: VisualDensity.compact,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        textStyle: AppTypography.caption.copyWith(fontWeight: FontWeight.w800),
+      ),
     );
   }
 }

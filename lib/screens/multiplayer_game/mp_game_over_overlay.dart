@@ -1,5 +1,4 @@
 import 'package:crush_block/services/multiplayer_service.dart';
-import 'package:crush_block/theme/app_components.dart';
 import 'package:crush_block/theme/app_design_system.dart';
 import 'package:crush_block/theme/app_typography.dart';
 import 'package:flutter/material.dart';
@@ -179,11 +178,10 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
 
           const SizedBox(height: AppSpacing.xl),
 
-          // Return button
-          AppActionButton(
+          _OverlayActionButton(
             label: '다시 시작',
-            height: 48,
             icon: Icons.refresh_rounded,
+            filled: true,
             onPressed: () async {
               final mpService = Get.find<MultiplayerService>();
               await mpService.leaveRoom();
@@ -194,11 +192,9 @@ class _MpGameOverOverlayState extends State<MpGameOverOverlay>
               }
             },
           ),
-          const SizedBox(height: AppSpacing.sm),
-          AppActionButton(
+          const SizedBox(height: 8),
+          _OverlayActionButton(
             label: '나가기',
-            tone: AppButtonTone.secondary,
-            height: 48,
             icon: Icons.home_rounded,
             onPressed: () async {
               final mpService = Get.find<MultiplayerService>();
@@ -341,6 +337,52 @@ class _PlayerResultBadge extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _OverlayActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool filled;
+  final VoidCallback onPressed;
+
+  const _OverlayActionButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.filled = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (filled) {
+      return ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 18),
+        label: Text(label),
+        style: ElevatedButton.styleFrom(
+          elevation: 0,
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.onPrimary,
+          minimumSize: const Size(0, 44),
+          textStyle: AppTypography.label.copyWith(fontWeight: FontWeight.w800),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+        ),
+      );
+    }
+
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.ink,
+        side: const BorderSide(color: AppColors.borderSoft),
+        minimumSize: const Size(0, 44),
+        textStyle: AppTypography.label.copyWith(fontWeight: FontWeight.w800),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+      ),
     );
   }
 }
