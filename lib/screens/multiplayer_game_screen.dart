@@ -203,8 +203,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
   Widget _buildStackedLayout(BoxConstraints constraints) {
     final padding = constraints.maxWidth < 380 ? 10.0 : 14.0;
     final gap = constraints.maxHeight < 650 ? 10.0 : 14.0;
-    final maxContentWidth =
-        constraints.maxWidth > 520 ? 430.0 : constraints.maxWidth - padding * 2;
+    final maxContentWidth = constraints.maxWidth > 520
+        ? 430.0
+        : (constraints.maxWidth - padding * 2).clamp(0.0, 430.0);
     final gridSize = _calculateStackedGridSize(
       constraints,
       padding: padding,
@@ -215,7 +216,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     final minHeight = constraints.maxHeight > padding * 2
         ? constraints.maxHeight - padding * 2
         : 0.0;
-    final contentHeight = 54 + gap + gridSize + 10 + gap + cellSize * 3.05 + 26;
 
     return SingleChildScrollView(
       child: Padding(
@@ -227,10 +227,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
           child: Center(
             child: SizedBox(
               width: maxContentWidth,
-              height: contentHeight,
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(height: 54, child: _buildMatchHeader()),
+                  SizedBox(height: 76, child: _buildMatchHeader()),
                   SizedBox(height: gap),
                   _buildBoardPanel(gridSize, cellSize),
                   SizedBox(height: gap),
@@ -249,34 +249,37 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     const gap = 18.0;
     final railWidth = (constraints.maxWidth * 0.28).clamp(220, 264).toDouble();
     final gridByWidth =
-        constraints.maxWidth - padding * 2 - gap - railWidth - 10;
-    final gridByHeight = constraints.maxHeight - padding * 2 - 10;
+        constraints.maxWidth - padding * 2 - gap - railWidth - 18;
+    final gridByHeight = constraints.maxHeight - padding * 2 - 18;
     final gridSize = gridByWidth < gridByHeight ? gridByWidth : gridByHeight;
     final clampedGridSize = gridSize.clamp(180, 560).toDouble();
     final cellSize = clampedGridSize / gridColumns;
 
     return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(padding),
-        child: Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _buildBoardPanel(clampedGridSize, cellSize),
-              const SizedBox(width: gap),
-              SizedBox(
-                width: railWidth,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(height: 54, child: _buildMatchHeader()),
-                    const SizedBox(height: gap),
-                    _buildControlTray(cellSize),
-                  ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Padding(
+          padding: const EdgeInsets.all(padding),
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _buildBoardPanel(clampedGridSize, cellSize),
+                const SizedBox(width: gap),
+                SizedBox(
+                  width: railWidth,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(height: 76, child: _buildMatchHeader()),
+                      const SizedBox(height: gap),
+                      _buildControlTray(cellSize),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -289,11 +292,11 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     required double gap,
     required double maxContentWidth,
   }) {
-    const headerHeight = 54.0;
-    const boardPadding = 10.0;
-    const trayPadding = 26.0;
+    const headerHeight = 76.0;
+    const boardPadding = 18.0;
+    const trayPadding = 80.0;
     const previewRatio = 3.05 / gridColumns;
-    final maxByWidth = maxContentWidth - 10;
+    final maxByWidth = maxContentWidth - 18;
     final maxByHeight = (constraints.maxHeight -
             padding * 2 -
             headerHeight -
@@ -302,7 +305,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
             trayPadding) /
         (1 + previewRatio);
     final gridSize = maxByWidth < maxByHeight ? maxByWidth : maxByHeight;
-    return gridSize.clamp(160, 560).toDouble();
+    return gridSize.clamp(120, 560).toDouble();
   }
 
   Widget _buildMatchHeader() {
@@ -349,11 +352,18 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
   Widget _buildBoardPanel(double gridSize, double cellSize) {
     return Container(
-      padding: const EdgeInsets.all(5),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.borderSoft),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.ink.withValues(alpha: 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: SizedBox(
         key: _gridKey,
@@ -378,39 +388,70 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
       onRotate: _rotateCurrentBlock,
     );
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderSoft),
-      ),
-      child: Row(
-        children: [
-          _TrayAction(
-            tooltip: '다시 시작',
-            icon: Icons.refresh_rounded,
-            onPressed: _restartGame,
-          ),
-          Expanded(
-            child: Center(
-              child: block,
+    return Obx(() {
+      final canPlace = controller.isMyTurn.value &&
+          controller.hasPendingPlacement.value &&
+          !controller.gameFinishedRx.value;
+
+      return Container(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderSoft),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.ink.withValues(alpha: 0.05),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
             ),
-          ),
-          _TrayAction(
-            tooltip: '나가기',
-            icon: Icons.logout_rounded,
-            onPressed: () {
-              if (controller.gameFinished) {
-                _leaveFinishedGame();
-              } else {
-                showMpLeaveDialog(context);
-              }
-            },
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            const Positioned(
+              left: 18,
+              top: 18,
+              child: _TrayDots(),
+            ),
+            const Positioned(
+              right: 18,
+              top: 18,
+              child: _TrayDots(),
+            ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                block,
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: 142,
+                  height: 44,
+                  child: ElevatedButton.icon(
+                    onPressed:
+                        canPlace ? controller.confirmPendingPlacement : null,
+                    icon: const Icon(Icons.check_rounded, size: 19),
+                    label: const Text('배치하기'),
+                    style: ElevatedButton.styleFrom(
+                      elevation: 0,
+                      backgroundColor: AppColors.primary,
+                      disabledBackgroundColor: AppColors.surfaceMuted,
+                      foregroundColor: AppColors.onPrimary,
+                      disabledForegroundColor: AppColors.textSubtle,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      textStyle: AppTypography.button,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   void _rotateCurrentBlock() {
@@ -418,22 +459,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
         controller.isMyTurn.value && !controller.gameFinishedRx.value;
     if (!canPlay) return;
 
-    controller.clearHover();
+    controller.clearPendingPlacement();
     setState(() {
       _currentRotation = (_currentRotation + 1) % rotationUnit;
     });
-  }
-
-  Future<void> _restartGame() async {
-    await _service.leaveRoom(countAsForfeit: !controller.gameFinished);
-    _service.configureMode(MultiplayerMode.ranked);
-    await _service.quickMatch();
-    if (Get.key.currentState?.canPop() ?? false) Get.back();
-  }
-
-  Future<void> _leaveFinishedGame() async {
-    await _service.leaveRoom();
-    if (Get.key.currentState?.canPop() ?? false) Get.back();
   }
 
   String _winnerText() {
@@ -465,13 +494,24 @@ class _PlayerChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 160),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      height: 70,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       decoration: BoxDecoration(
-        color: active ? color.withValues(alpha: 0.08) : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: active ? color.withValues(alpha: 0.32) : AppColors.borderSoft,
-        ),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderSoft),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.ink.withValues(alpha: active ? 0.08 : 0.04),
+            blurRadius: active ? 14 : 10,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: active ? color : Colors.transparent,
+            blurRadius: 0,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment:
@@ -524,24 +564,46 @@ class _TurnBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minWidth: 58, maxWidth: 92),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      constraints: const BoxConstraints(minWidth: 88, maxWidth: 122),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       decoration: BoxDecoration(
-        color: active ? AppColors.primary : AppColors.surface,
+        color: const Color(0xFF222832),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: active ? AppColors.primary : AppColors.borderSoft,
-        ),
+        border: Border.all(color: AppColors.ink.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.ink.withValues(alpha: 0.18),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: AppTypography.caption.copyWith(
-          color: active ? AppColors.onPrimary : AppColors.textMuted,
-          fontWeight: FontWeight.w900,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Flexible(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.onPrimary,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: active ? AppColors.primary : AppColors.tileCoral,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -559,40 +621,40 @@ class _BlockMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 22,
-      height: 22,
+      width: 36,
+      height: 36,
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(9),
         border: Border.all(color: AppColors.ink.withValues(alpha: 0.16)),
       ),
-      child: Icon(icon, size: 13, color: AppColors.onPrimary),
+      child: Icon(icon, size: 21, color: AppColors.onPrimary),
     );
   }
 }
 
-class _TrayAction extends StatelessWidget {
-  final String tooltip;
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  const _TrayAction({
-    required this.tooltip,
-    required this.icon,
-    required this.onPressed,
-  });
+class _TrayDots extends StatelessWidget {
+  const _TrayDots();
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: IconButton(
-        onPressed: onPressed,
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints.tightFor(width: 42, height: 42),
-        iconSize: 20,
-        color: AppColors.textMuted,
-        icon: Icon(icon),
+    return SizedBox(
+      width: 28,
+      height: 28,
+      child: Wrap(
+        spacing: 5,
+        runSpacing: 5,
+        children: List.generate(
+          9,
+          (_) => Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(
+              color: AppColors.borderSoft.withValues(alpha: 0.55),
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
       ),
     );
   }

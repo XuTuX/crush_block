@@ -30,6 +30,7 @@ class MultiplayerGameController extends GetxController {
   final hoverColor = Rx<Color?>(null);
   final lastPlacedCells = <int>[].obs;
   final lastClearedCells = <int>[].obs;
+  final hasPendingPlacement = false.obs;
 
   Worker? _roomWorker;
   Worker? _turnWorker;
@@ -38,6 +39,9 @@ class MultiplayerGameController extends GetxController {
   Worker? _lastMoveWorker;
   Timer? _lastPlacedTimer;
   Timer? _lastClearedTimer;
+  int? _pendingStartCol;
+  int? _pendingStartRow;
+  int _pendingRotation = 0;
 
   MultiplayerGameController({
     required this.roomId,
@@ -148,24 +152,37 @@ class MultiplayerGameController extends GetxController {
     Color color, {
     int originRow = 1,
     int originCol = 1,
+    int rotation = 0,
+    bool stagePlacement = false,
   }) {
     if (!isMyTurn.value || gameFinishedRx.value) {
-      clearHover();
+      if (stagePlacement) {
+        clearPendingPlacement();
+      } else {
+        clearHover();
+      }
       return;
     }
 
     final startRow = centerRow - originRow;
     final startCol = centerCol - originCol;
     if (!canPlaceShapeAtStart(shape, startRow, startCol)) {
-      clearHover();
+      if (stagePlacement) {
+        clearPendingPlacement();
+      } else {
+        clearHover();
+      }
       return;
     }
 
-    final nextCells = shape.map((offset) {
-      final row = startRow + offset.dy.toInt();
-      final col = startCol + offset.dx.toInt();
-      return row * gridColumns + col;
-    }).toList(growable: false);
+    final nextCells = _cellIndexesForShape(shape, startRow, startCol);
+
+    if (stagePlacement) {
+      _pendingStartCol = startCol;
+      _pendingStartRow = startRow;
+      _pendingRotation = rotation;
+      hasPendingPlacement.value = true;
+    }
 
     if (_sameCells(hoverCells, nextCells) && hoverColor.value == color) {
       return;
@@ -178,6 +195,71 @@ class MultiplayerGameController extends GetxController {
   void clearHover() {
     if (hoverCells.isNotEmpty) hoverCells.clear();
     if (hoverColor.value != null) hoverColor.value = null;
+  }
+
+  void clearPendingPlacement() {
+    _pendingStartCol = null;
+    _pendingStartRow = null;
+    hasPendingPlacement.value = false;
+    clearHover();
+  }
+
+  bool stageSelectedBlockAtCenter(
+    int centerRow,
+    int centerCol,
+    int rotation, {
+    int originRow = 1,
+    int originCol = 1,
+  }) {
+    final blockType = mySelectedBlock;
+    if (blockType == null || !isMyTurn.value || gameFinishedRx.value) {
+      clearPendingPlacement();
+      return false;
+    }
+
+    final shape = shapeFor(blockType, rotation);
+    final startRow = centerRow - originRow;
+    final startCol = centerCol - originCol;
+    if (!canPlaceShapeAtStart(shape, startRow, startCol)) {
+      clearPendingPlacement();
+      return false;
+    }
+
+    _pendingStartCol = startCol;
+    _pendingStartRow = startRow;
+    _pendingRotation = rotation;
+    hasPendingPlacement.value = true;
+
+    final nextCells = _cellIndexesForShape(shape, startRow, startCol);
+    hoverCells.assignAll(nextCells);
+    hoverColor.value = myPlacementColor;
+    _playSelectionHaptic();
+    return true;
+  }
+
+  bool confirmPendingPlacement() {
+    final startCol = _pendingStartCol;
+    final startRow = _pendingStartRow;
+    final blockType = mySelectedBlock;
+    if (startCol == null ||
+        startRow == null ||
+        blockType == null ||
+        !isMyTurn.value ||
+        gameFinishedRx.value) {
+      clearPendingPlacement();
+      return false;
+    }
+
+    final shape = shapeFor(blockType, _pendingRotation);
+    if (!canPlaceShapeAtStart(shape, startRow, startCol)) {
+      clearPendingPlacement();
+      return false;
+    }
+
+    _playSelectionHaptic();
+    clearPendingPlacement();
+    _service.placeBlock(startCol, startRow, _pendingRotation);
+    return true;
   }
 
   bool placeSelectedBlockAtCenter(
@@ -241,6 +323,9 @@ class MultiplayerGameController extends GetxController {
     final myRole = me?['role']?.toString();
     isMyTurn.value = myRole != null && myRole == _service.currentTurn.value;
     gameFinishedRx.value = _service.roomStatus.value == 'finished';
+    if (!isMyTurn.value || gameFinishedRx.value) {
+      clearPendingPlacement();
+    }
 
     if (!gameFinishedRx.value ||
         myRole == null ||
@@ -264,6 +349,15 @@ class MultiplayerGameController extends GetxController {
       if (current[i] != next[i]) return false;
     }
     return true;
+  }
+
+  List<int> _cellIndexesForShape(
+      List<Offset> shape, int startRow, int startCol) {
+    return shape.map((offset) {
+      final row = startRow + offset.dy.toInt();
+      final col = startCol + offset.dx.toInt();
+      return row * gridColumns + col;
+    }).toList(growable: false);
   }
 
   void _syncLastMoveEffects() {

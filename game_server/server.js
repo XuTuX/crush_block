@@ -61,6 +61,49 @@ const BLOCKS = {
   ],
 };
 
+const WALL_SHAPES = [
+  {
+    name: 'single',
+    cells: [{ x: 0, y: 0 }],
+  },
+  {
+    name: 'domino',
+    cells: [{ x: 0, y: 0 }, { x: 1, y: 0 }],
+  },
+  {
+    name: 'tri-line',
+    cells: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }],
+  },
+  {
+    name: 'quad-line',
+    cells: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }],
+  },
+  {
+    name: 'corner-small',
+    cells: [{ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }],
+  },
+  {
+    name: 'square',
+    cells: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }],
+  },
+  {
+    name: 'corner',
+    cells: [{ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 0, y: 2 }, { x: 1, y: 2 }],
+  },
+  {
+    name: 'tee',
+    cells: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 1, y: 1 }],
+  },
+  {
+    name: 'zig',
+    cells: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 2, y: 1 }],
+  },
+  {
+    name: 'step',
+    cells: [{ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }, { x: 1, y: 2 }],
+  },
+];
+
 const rooms = new Map();
 const waitingQueue = [];
 
@@ -151,80 +194,170 @@ function hasValidMove(board, blockType) {
   return false;
 }
 
-function oneGapWallCandidates(board, wall) {
-  return [
-    { x: wall.x - 2, y: wall.y },
-    { x: wall.x + 2, y: wall.y },
-    { x: wall.x, y: wall.y - 2 },
-    { x: wall.x, y: wall.y + 2 },
-  ].filter((cell) => (
-    cell.x >= 0 &&
-    cell.x < BOARD_SIZE &&
-    cell.y >= 0 &&
-    cell.y < BOARD_SIZE &&
-    board[cell.y][cell.x] === 'empty'
-  ));
+function shuffled(items) {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
 }
 
-function addRandomWalls(room) {
-  while (room.walls.length < 2) {
-    if (room.walls.length === 1) {
-      const candidates = oneGapWallCandidates(room.board, room.walls[0]);
-      if (candidates.length > 0) {
-        const wall = candidates[Math.floor(Math.random() * candidates.length)];
-        room.board[wall.y][wall.x] = 'wall';
-        room.walls.push(wall);
-        continue;
+function normalizeWallShape(cells) {
+  const minX = Math.min(...cells.map((cell) => cell.x));
+  const minY = Math.min(...cells.map((cell) => cell.y));
+  const normalized = cells.map((cell) => ({
+    x: cell.x - minX,
+    y: cell.y - minY,
+  }));
+  normalized.sort((a, b) => (a.y - b.y) || (a.x - b.x));
+  return normalized;
+}
+
+function rotateWallShape(cells, rotation) {
+  let rotated = cells.map((cell) => ({ ...cell }));
+  for (let i = 0; i < rotation; i += 1) {
+    rotated = rotated.map((cell) => ({ x: -cell.y, y: cell.x }));
+  }
+  return normalizeWallShape(rotated);
+}
+
+function wallShapeVariants(shape) {
+  const seen = new Set();
+  const variants = [];
+  for (let rotation = 0; rotation < 4; rotation += 1) {
+    const cells = rotateWallShape(shape.cells, rotation);
+    const key = cells.map((cell) => `${cell.x},${cell.y}`).join('|');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    variants.push(cells);
+  }
+  return variants;
+}
+
+function canPlaceWallShape(board, cells, startX, startY) {
+  return cells.every((cell) => {
+    const x = startX + cell.x;
+    const y = startY + cell.y;
+    return (
+      x >= 0 &&
+      x < BOARD_SIZE &&
+      y >= 0 &&
+      y < BOARD_SIZE &&
+      board[y][x] === 'empty'
+    );
+  });
+}
+
+function placeWallShape(board, cells, startX, startY) {
+  return cells.map((cell) => {
+    const wall = { x: startX + cell.x, y: startY + cell.y };
+    board[wall.y][wall.x] = 'wall';
+    return wall;
+  });
+}
+
+function tryAddWallShape(room, shape) {
+  const variants = shuffled(wallShapeVariants(shape));
+  for (const cells of variants) {
+    const maxX = Math.max(...cells.map((cell) => cell.x));
+    const maxY = Math.max(...cells.map((cell) => cell.y));
+    const starts = [];
+    for (let y = 0; y <= BOARD_SIZE - maxY - 1; y += 1) {
+      for (let x = 0; x <= BOARD_SIZE - maxX - 1; x += 1) {
+        starts.push({ x, y });
       }
     }
 
-    const x = Math.floor(Math.random() * BOARD_SIZE);
-    const y = Math.floor(Math.random() * BOARD_SIZE);
-    if (room.board[y][x] !== 'empty') continue;
-    room.board[y][x] = 'wall';
-    room.walls.push({ x, y });
+    for (const start of shuffled(starts)) {
+      if (!canPlaceWallShape(room.board, cells, start.x, start.y)) continue;
+      room.walls.push(...placeWallShape(room.board, cells, start.x, start.y));
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function addRandomWalls(room) {
+  let placedGroups = 0;
+  const shapePool = shuffled(WALL_SHAPES);
+
+  while (placedGroups < 2) {
+    const shape = shapePool.pop() || WALL_SHAPES[0];
+    if (tryAddWallShape(room, shape)) {
+      placedGroups += 1;
+      continue;
+    }
+
+    if (tryAddWallShape(room, WALL_SHAPES[0])) {
+      placedGroups += 1;
+      continue;
+    }
+
+    break;
   }
 }
 
 function processExplosions(board) {
   const clearKeys = new Set();
 
+  const scanSegment = (from, to, getCell, addCell) => {
+    if (to - from <= 1) return;
+
+    let filled = true;
+    for (let index = from + 1; index < to; index += 1) {
+      if (getCell(index) === 'empty') {
+        filled = false;
+        break;
+      }
+    }
+
+    if (!filled) return;
+
+    for (let index = from + 1; index < to; index += 1) {
+      addCell(index);
+    }
+  };
+
   for (let y = 0; y < BOARD_SIZE; y += 1) {
     let lastWallX = -1;
     for (let x = 0; x < BOARD_SIZE; x += 1) {
       if (board[y][x] !== 'wall') continue;
-      if (lastWallX !== -1 && x - lastWallX > 1) {
-        let filled = true;
-        for (let ix = lastWallX + 1; ix < x; ix += 1) {
-          if (board[y][ix] === 'empty') filled = false;
-        }
-        if (filled) {
-          for (let ix = lastWallX + 1; ix < x; ix += 1) {
-            clearKeys.add(`${ix},${y}`);
-          }
-        }
-      }
+      scanSegment(
+        lastWallX,
+        x,
+        (ix) => board[y][ix],
+        (ix) => clearKeys.add(`${ix},${y}`),
+      );
       lastWallX = x;
     }
+    scanSegment(
+      lastWallX,
+      BOARD_SIZE,
+      (ix) => board[y][ix],
+      (ix) => clearKeys.add(`${ix},${y}`),
+    );
   }
 
   for (let x = 0; x < BOARD_SIZE; x += 1) {
     let lastWallY = -1;
     for (let y = 0; y < BOARD_SIZE; y += 1) {
       if (board[y][x] !== 'wall') continue;
-      if (lastWallY !== -1 && y - lastWallY > 1) {
-        let filled = true;
-        for (let iy = lastWallY + 1; iy < y; iy += 1) {
-          if (board[iy][x] === 'empty') filled = false;
-        }
-        if (filled) {
-          for (let iy = lastWallY + 1; iy < y; iy += 1) {
-            clearKeys.add(`${x},${iy}`);
-          }
-        }
-      }
+      scanSegment(
+        lastWallY,
+        y,
+        (iy) => board[iy][x],
+        (iy) => clearKeys.add(`${x},${iy}`),
+      );
       lastWallY = y;
     }
+    scanSegment(
+      lastWallY,
+      BOARD_SIZE,
+      (iy) => board[iy][x],
+      (iy) => clearKeys.add(`${x},${iy}`),
+    );
   }
 
   for (const key of clearKeys) {

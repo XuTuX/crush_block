@@ -52,7 +52,7 @@ class MultiplayerDraggableBlock extends StatelessWidget {
 
         return Semantics(
           button: canDrag,
-          label: '블록 회전',
+          label: '블록 위치 선택',
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: canDrag ? onRotate : null,
@@ -76,7 +76,7 @@ class MultiplayerDraggableBlock extends StatelessWidget {
               dragAnchorStrategy: (_, __, ___) {
                 return Offset(columns * cellSize * 0.5, rows * cellSize);
               },
-              onDragStarted: controller.clearHover,
+              onDragStarted: controller.clearPendingPlacement,
               onDragUpdate: (details) {
                 _handleDragUpdate(
                   details,
@@ -90,7 +90,7 @@ class MultiplayerDraggableBlock extends StatelessWidget {
               onDragEnd: (details) {
                 _handleDragEnd(details, controller, columns, rows);
               },
-              onDraggableCanceled: (_, __) => controller.clearHover(),
+              onDraggableCanceled: (_, __) {},
               child: SizedBox(
                 width: columns * cellSize * 0.72,
                 height: rows * cellSize * 0.72,
@@ -133,6 +133,8 @@ class MultiplayerDraggableBlock extends StatelessWidget {
       color,
       originRow: rows ~/ 2,
       originCol: columns ~/ 2,
+      rotation: rotation,
+      stagePlacement: true,
     );
   }
 
@@ -142,6 +144,8 @@ class MultiplayerDraggableBlock extends StatelessWidget {
     int columns,
     int rows,
   ) {
+    if (controller.hasPendingPlacement.value) return;
+
     final gridBox = gridKey.currentContext?.findRenderObject() as RenderBox?;
     if (gridBox == null) {
       controller.clearHover();
@@ -159,7 +163,7 @@ class MultiplayerDraggableBlock extends StatelessWidget {
     final centerColumn = (relativeX / cellSize).floor();
     final centerRow = (relativeY / cellSize).floor();
 
-    controller.placeSelectedBlockAtCenter(
+    controller.stageSelectedBlockAtCenter(
       centerRow,
       centerColumn,
       rotation,
