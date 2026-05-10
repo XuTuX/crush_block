@@ -6,6 +6,7 @@ const cors = require('cors');
 const BOARD_SIZE = 9;
 const BLOCK_TYPES = new Set(['I', 'O', 'T', 'L', 'J', 'S', 'Z']);
 const PLAYER_ROLES = ['player1', 'player2'];
+const TURN_DURATION_MS = 15_000;
 
 const app = express();
 app.use(cors());
@@ -119,6 +120,10 @@ function publicRoom(room) {
     board: room.board,
     players: room.players,
     currentTurn: room.currentTurn,
+    turnStartedAt: room.turnStartedAt,
+    turnExpiresAt: room.turnExpiresAt,
+    turnDurationMs: TURN_DURATION_MS,
+    serverNow: Date.now(),
     gameSeed: room.gameSeed,
     walls: room.walls,
     winner: room.winner,
@@ -394,6 +399,9 @@ function createRoom(socket, data = {}, fromQueuePlayer = null) {
     board: createEmptyBoard(),
     players: [host],
     currentTurn: 'player1',
+    turnStartedAt: null,
+    turnExpiresAt: null,
+    turnTimer: null,
     gameSeed: Date.now(),
     walls: [],
     winner: null,
@@ -459,6 +467,7 @@ function removeFromQueue(socketId, userId, clientId) {
 
 function finishRoom(room, winner, reason) {
   if (room.status === 'finished') return;
+  clearTurnTimer(room);
   room.status = 'finished';
   room.winner = winner;
   room.winReason = reason;
@@ -466,6 +475,33 @@ function finishRoom(room, winner, reason) {
   saveResult(room).catch((error) => {
     console.error('Failed to save result:', error.message);
   });
+}
+
+function clearTurnTimer(room) {
+  if (room.turnTimer) {
+    clearTimeout(room.turnTimer);
+    room.turnTimer = null;
+  }
+}
+
+function startTurnTimer(room) {
+  clearTurnTimer(room);
+  if (room.status !== 'playing') return;
+
+  const turnPlayer = room.players.find((p) => p.role === room.currentTurn);
+  if (!turnPlayer) return;
+
+  const startedAt = Date.now();
+  room.turnStartedAt = startedAt;
+  room.turnExpiresAt = startedAt + TURN_DURATION_MS;
+  room.turnTimer = setTimeout(() => {
+    const liveRoom = rooms.get(room.roomId);
+    if (!liveRoom || liveRoom.status !== 'playing') return;
+    if (liveRoom.currentTurn !== turnPlayer.role) return;
+
+    const winner = turnPlayer.role === 'player1' ? 'player2' : 'player1';
+    finishRoom(liveRoom, winner, 'timeout');
+  }, TURN_DURATION_MS + 40);
 }
 
 async function saveResult(room) {
@@ -581,6 +617,7 @@ io.on('connection', (socket) => {
         finishRoom(room, 'player2', 'no_valid_move');
         return;
       }
+      startTurnTimer(room);
     }
 
     emitRoom(room);
@@ -644,6 +681,7 @@ io.on('connection', (socket) => {
       return;
     }
 
+    startTurnTimer(room);
     emitRoom(room);
   });
 
@@ -659,6 +697,7 @@ io.on('connection', (socket) => {
     if (!player) return;
     socket.leave(room.roomId);
     if (room.status === 'waiting') {
+      clearTurnTimer(room);
       rooms.delete(room.roomId);
       emitAvailableRooms();
       return;
