@@ -11,6 +11,7 @@ class MultiplayerBoard extends StatelessWidget {
   final double gridSize;
   final double cellSize;
   final double pulseValue;
+  final int rotation;
 
   const MultiplayerBoard({
     super.key,
@@ -18,6 +19,7 @@ class MultiplayerBoard extends StatelessWidget {
     required this.gridSize,
     required this.cellSize,
     required this.pulseValue,
+    required this.rotation,
   });
 
   @override
@@ -25,79 +27,90 @@ class MultiplayerBoard extends StatelessWidget {
     final service = Get.find<MultiplayerService>();
     return Obx(() {
       final board = service.board;
-      if (board.length != 9) {
+      if (board.length != gridRows) {
         return const SizedBox.shrink();
       }
-      return SizedBox.square(
-        dimension: gridSize,
-        child: GridView.builder(
-          physics: const NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.zero,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: gridColumns,
-          ),
-          itemCount: gridRows * gridColumns,
-          itemBuilder: (context, index) {
-            return Obx(() {
-              final liveBoard = service.board;
-              if (liveBoard.length != gridRows) {
-                return const SizedBox.shrink();
-              }
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox.square(
+          dimension: gridSize,
+          child: GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: gridColumns,
+            ),
+            itemCount: gridRows * gridColumns,
+            itemBuilder: (context, index) {
+              return Obx(() {
+                final liveBoard = service.board;
+                if (liveBoard.length != gridRows) {
+                  return const SizedBox.shrink();
+                }
 
-              final row = index ~/ gridColumns;
-              final col = index % gridColumns;
-              final cell = liveBoard[row][col];
-              final isHover = controller.hoverCells.contains(index);
-              final isPlaced = controller.lastPlacedCells.contains(index);
-              final isCleared = controller.lastClearedCells.contains(index);
-              final isUnavailable = _isUnavailable(cell);
-              final color = _cellColor(cell, isHover);
-              final isFilled = cell != 'empty' || isHover || isUnavailable;
+                final row = index ~/ gridColumns;
+                final col = index % gridColumns;
+                final cell = liveBoard[row][col];
+                final isHover = controller.hoverCells.contains(index);
+                final isInvalid = controller.invalidCells.contains(index);
+                final isPlaced = controller.lastPlacedCells.contains(index);
+                final isCleared = controller.lastClearedCells.contains(index);
+                final isUnavailable = _isUnavailable(cell);
+                final color = _cellColor(cell, isHover);
+                final isFilled = cell != 'empty' || isHover || isUnavailable;
 
-              return AnimatedScale(
-                scale: isPlaced ? 1.02 : 1,
-                duration: const Duration(milliseconds: 140),
-                curve: Curves.easeOutCubic,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 140),
-                  curve: Curves.easeOutCubic,
-                  margin: const EdgeInsets.all(1),
-                  decoration: _cellDecoration(
-                    cell: cell,
-                    color: color,
-                    isFilled: isFilled,
-                    isHover: isHover,
-                    isCleared: isCleared,
-                    isPlaced: isPlaced,
-                    isUnavailable: isUnavailable,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(
-                      isFilled ? cellSize * 0.18 : cellSize * 0.12,
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _handleCellTap(row, col, index),
+                  child: AnimatedScale(
+                    scale: isInvalid
+                        ? 0.94
+                        : isPlaced
+                            ? 1.025
+                            : 1,
+                    duration: const Duration(milliseconds: 120),
+                    curve: Curves.easeOutCubic,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 120),
+                      curve: Curves.easeOutCubic,
+                      margin: const EdgeInsets.all(0.8),
+                      decoration: _cellDecoration(
+                        cell: cell,
+                        color: color,
+                        isFilled: isFilled,
+                        isHover: isHover,
+                        isInvalid: isInvalid,
+                        isCleared: isCleared,
+                        isPlaced: isPlaced,
+                        isUnavailable: isUnavailable,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(cellSize * 0.12),
+                        child: Center(child: _cellMarker(cell, isHover)),
+                      ),
                     ),
-                    child: Center(child: _cellMarker(cell, isHover)),
                   ),
-                ),
-              );
-            });
-          },
+                );
+              });
+            },
+          ),
         ),
       );
     });
   }
 
   Color _cellColor(String cell, bool isHover) {
-    if (cell == 'wall') return const Color(0xFF40444C);
-    if (_isUnavailable(cell)) return AppColors.backgroundSoft;
+    if (cell == 'wall') return const Color(0xFF24272C);
+    if (_isUnavailable(cell)) return const Color(0xFFF2F3F5);
     if (cell == controller.myRole) return controller.myBlockColor.value;
     if (cell == controller.opponentRole) {
       return controller.opponentBlockColor.value;
     }
     if (isHover) {
       return (controller.hoverColor.value ?? controller.myPlacementColor)
-          .withValues(alpha: 0.42);
+          .withValues(alpha: 0.14);
     }
-    return AppColors.background;
+    return AppColors.surface;
   }
 
   BoxDecoration _cellDecoration({
@@ -105,21 +118,31 @@ class MultiplayerBoard extends StatelessWidget {
     required Color color,
     required bool isFilled,
     required bool isHover,
+    required bool isInvalid,
     required bool isCleared,
     required bool isPlaced,
     required bool isUnavailable,
   }) {
-    final radius = BorderRadius.circular(
-      isFilled ? cellSize * 0.18 : cellSize * 0.12,
-    );
+    final radius = BorderRadius.circular(cellSize * 0.12);
+
+    if (isInvalid) {
+      return BoxDecoration(
+        color: AppColors.dangerSoft,
+        borderRadius: radius,
+        border: Border.all(
+          color: AppColors.dangerStrong.withValues(alpha: 0.78),
+          width: 1.6,
+        ),
+      );
+    }
 
     if (!isFilled) {
       return BoxDecoration(
         color: AppColors.surface,
         borderRadius: radius,
         border: Border.all(
-          color: AppColors.borderSoft,
-          width: 1,
+          color: const Color(0xFFEAEAEA),
+          width: 0.8,
         ),
       );
     }
@@ -129,8 +152,8 @@ class MultiplayerBoard extends StatelessWidget {
         color: color,
         borderRadius: radius,
         border: Border.all(
-          color: AppColors.ink.withValues(alpha: 0.36),
-          width: 1.2,
+          color: const Color(0xFF15171A),
+          width: 1,
         ),
       );
     }
@@ -140,7 +163,7 @@ class MultiplayerBoard extends StatelessWidget {
         color: color,
         borderRadius: radius,
         border: Border.all(
-          color: AppColors.ink.withValues(alpha: 0.08),
+          color: const Color(0xFFD8DADF),
           width: 1,
         ),
       );
@@ -148,11 +171,11 @@ class MultiplayerBoard extends StatelessWidget {
 
     if (isHover) {
       return BoxDecoration(
-        color: color.withValues(alpha: 0.22),
+        color: color,
         borderRadius: radius,
         border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.72),
-          width: 1.4,
+          color: controller.myBlockColor.value.withValues(alpha: 0.55),
+          width: 1.2,
         ),
       );
     }
@@ -162,45 +185,39 @@ class MultiplayerBoard extends StatelessWidget {
       borderRadius: radius,
       border: Border.all(
         color: isCleared
-            ? AppColors.success
+            ? AppColors.success.withValues(alpha: 0.55)
             : isPlaced
-                ? AppColors.primary
-                : AppColors.ink.withValues(alpha: 0.24),
-        width: isCleared || isPlaced ? 1.7 : 1.1,
+                ? AppColors.ink.withValues(alpha: 0.12)
+                : Colors.white.withValues(alpha: 0.48),
+        width: isCleared || isPlaced ? 1.1 : 0.8,
       ),
+      boxShadow: [
+        BoxShadow(
+          color: color.withValues(alpha: 0.18),
+          blurRadius: 5,
+          offset: const Offset(0, 2),
+        ),
+      ],
     );
   }
 
   Widget? _cellMarker(String cell, bool isHover) {
     if (isHover) {
-      return Icon(
-        Icons.add_rounded,
-        color: AppColors.primary.withValues(alpha: 0.78),
-        size: cellSize * 0.42,
-      );
-    }
-
-    if (cell == controller.myRole) {
-      return Icon(
-        Icons.circle_rounded,
-        color: AppColors.onPrimary.withValues(alpha: 0.86),
-        size: cellSize * 0.34,
-      );
-    }
-
-    if (cell == controller.opponentRole) {
-      return Icon(
-        Icons.change_history_rounded,
-        color: AppColors.onPrimary.withValues(alpha: 0.9),
-        size: cellSize * 0.4,
+      return Container(
+        width: cellSize * 0.18,
+        height: cellSize * 0.18,
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.72),
+          shape: BoxShape.circle,
+        ),
       );
     }
 
     if (cell == 'wall') {
       return Icon(
         Icons.close_rounded,
-        color: AppColors.surface.withValues(alpha: 0.74),
-        size: cellSize * 0.38,
+        color: const Color(0xFFB6BAC0),
+        size: cellSize * 0.42,
       );
     }
 
@@ -213,6 +230,37 @@ class MultiplayerBoard extends StatelessWidget {
     }
 
     return null;
+  }
+
+  void _handleCellTap(int row, int col, int index) {
+    if (!controller.isMyTurn.value || controller.gameFinishedRx.value) return;
+    if (controller.isPendingCell(index)) {
+      controller.confirmPendingPlacement();
+      return;
+    }
+
+    final blockType = controller.mySelectedBlock;
+    if (blockType == null) return;
+
+    final shape = controller.shapeFor(blockType, rotation);
+    final columns = controller.visualColumnsFor(shape);
+    final rows = controller.visualRowsFor(shape);
+    final staged = controller.stageSelectedBlockAtCenter(
+      row,
+      col,
+      rotation,
+      originRow: rows ~/ 2,
+      originCol: columns ~/ 2,
+    );
+    if (!staged) {
+      controller.showInvalidPlacement(
+        row,
+        col,
+        shape,
+        originRow: rows ~/ 2,
+        originCol: columns ~/ 2,
+      );
+    }
   }
 
   bool _isUnavailable(String cell) {

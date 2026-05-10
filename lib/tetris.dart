@@ -77,16 +77,23 @@ class _BlockCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(cellSize * 0.14);
-    final borderWidth = cellSize < 18 ? 1.0 : 1.3;
+    final borderWidth = cellSize < 18 ? 1.4 : 2.0;
 
     return Container(
       decoration: BoxDecoration(
         color: color,
         borderRadius: radius,
         border: Border.all(
-          color: const Color(0xFF1A1A1A).withValues(alpha: 0.28),
+          color: const Color(0xFF1A1A1A),
           width: borderWidth,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1A1A1A).withValues(alpha: 0.92),
+            blurRadius: 0,
+            offset: Offset(cellSize * 0.07, cellSize * 0.07),
+          ),
+        ],
       ),
     );
   }

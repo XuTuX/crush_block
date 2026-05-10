@@ -30,6 +30,7 @@ class MpSharedBlocks extends StatelessWidget {
           gridKey: gridKey,
           rotation: rotation,
           onRotate: onRotate,
+          controller: controller,
         ),
       ),
     );

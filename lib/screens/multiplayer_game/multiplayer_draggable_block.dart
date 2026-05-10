@@ -10,6 +10,7 @@ class MultiplayerDraggableBlock extends StatelessWidget {
   final GlobalKey gridKey;
   final int rotation;
   final VoidCallback onRotate;
+  final MultiplayerGameController controller;
 
   const MultiplayerDraggableBlock({
     super.key,
@@ -18,11 +19,11 @@ class MultiplayerDraggableBlock extends StatelessWidget {
     required this.gridKey,
     required this.rotation,
     required this.onRotate,
+    required this.controller,
   });
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<MultiplayerGameController>();
 
     return Obx(
       () {
@@ -39,15 +40,12 @@ class MultiplayerDraggableBlock extends StatelessWidget {
             !controller.gameFinishedRx.value &&
             shape.isNotEmpty;
 
-        final dockBlock = Opacity(
-          opacity: canDrag ? 1 : 0.45,
-          child: TetrisBlock(
-            shape: shape,
-            color: color,
-            cellSize: cellSize * 0.72,
-            columns: columns,
-            rows: rows,
-          ),
+        final dockBlock = TetrisBlock(
+          shape: shape,
+          color: color,
+          cellSize: cellSize * 0.86,
+          columns: columns,
+          rows: rows,
         );
 
         return Semantics(
@@ -63,15 +61,19 @@ class MultiplayerDraggableBlock extends StatelessWidget {
                 color: Colors.transparent,
                 child: TetrisBlock(
                   shape: shape,
-                  color: color.withValues(alpha: 0.72),
+                  color: color,
                   cellSize: cellSize,
                   columns: columns,
                   rows: rows,
                 ),
               ),
-              childWhenDragging: SizedBox(
-                width: columns * cellSize * 0.72,
-                height: rows * cellSize * 0.72,
+              childWhenDragging: Opacity(
+                opacity: 0.28,
+                child: SizedBox(
+                  width: columns * cellSize * 0.86,
+                  height: rows * cellSize * 0.86,
+                  child: dockBlock,
+                ),
               ),
               dragAnchorStrategy: (_, __, ___) {
                 return Offset(columns * cellSize * 0.5, rows * cellSize);
@@ -90,10 +92,10 @@ class MultiplayerDraggableBlock extends StatelessWidget {
               onDragEnd: (details) {
                 _handleDragEnd(details, controller, columns, rows);
               },
-              onDraggableCanceled: (_, __) {},
+              onDraggableCanceled: (_, __) => controller.clearHover(),
               child: SizedBox(
-                width: columns * cellSize * 0.72,
-                height: rows * cellSize * 0.72,
+                width: columns * cellSize * 0.86,
+                height: rows * cellSize * 0.86,
                 child: dockBlock,
               ),
             ),
@@ -134,7 +136,7 @@ class MultiplayerDraggableBlock extends StatelessWidget {
       originRow: rows ~/ 2,
       originCol: columns ~/ 2,
       rotation: rotation,
-      stagePlacement: true,
+      stagePlacement: false,
     );
   }
 
@@ -144,8 +146,6 @@ class MultiplayerDraggableBlock extends StatelessWidget {
     int columns,
     int rows,
   ) {
-    if (controller.hasPendingPlacement.value) return;
-
     final gridBox = gridKey.currentContext?.findRenderObject() as RenderBox?;
     if (gridBox == null) {
       controller.clearHover();
@@ -163,7 +163,7 @@ class MultiplayerDraggableBlock extends StatelessWidget {
     final centerColumn = (relativeX / cellSize).floor();
     final centerRow = (relativeY / cellSize).floor();
 
-    controller.stageSelectedBlockAtCenter(
+    controller.placeSelectedBlockAtCenter(
       centerRow,
       centerColumn,
       rotation,

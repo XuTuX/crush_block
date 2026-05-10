@@ -4,6 +4,7 @@ import 'package:crush_block/screens/multiplayer_game_screen.dart';
 import 'package:crush_block/screens/ranking_screen.dart';
 import 'package:crush_block/services/auth_service.dart';
 import 'package:crush_block/services/multiplayer_service.dart';
+import 'package:crush_block/services/settings_service.dart';
 import 'package:crush_block/theme/app_components.dart';
 import 'package:crush_block/theme/app_design_system.dart';
 import 'package:crush_block/theme/app_typography.dart';
@@ -97,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 top: AppSpacing.md,
                 right: AppSpacing.md,
                 child: _SettingsButton(
-                  onPressed: () => _showSettingsSheet(authService),
+                  onPressed: () => _showSettingsPage(authService),
                 ),
               ),
               SafeArea(
@@ -278,12 +279,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _showSettingsSheet(AuthService authService) {
-    Get.bottomSheet(
-      _SettingsSheet(authService: authService),
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: AppColors.ink.withValues(alpha: 0.36),
+  void _showSettingsPage(AuthService authService) {
+    Get.to(
+      () => _SettingsPage(
+        authService: authService,
+        onEditNickname: () => _showEditNicknameDialog(authService),
+        onSignOut: () => _confirmSignOut(authService),
+        onDeleteAccount: () => _confirmDeleteAccount(authService),
+      ),
+      transition: Transition.rightToLeft,
+      duration: const Duration(milliseconds: 240),
     );
   }
 
@@ -441,84 +446,128 @@ class _SettingsButton extends StatelessWidget {
   }
 }
 
-class _SettingsSheet extends StatelessWidget {
+class _SettingsPage extends StatelessWidget {
   final AuthService authService;
+  final VoidCallback onEditNickname;
+  final VoidCallback onSignOut;
+  final VoidCallback onDeleteAccount;
 
-  const _SettingsSheet({required this.authService});
+  const _SettingsPage({
+    required this.authService,
+    required this.onEditNickname,
+    required this.onSignOut,
+    required this.onDeleteAccount,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+    final settingsService = Get.find<SettingsService>();
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.borderSoft),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomPaint(painter: GridPatternPainter()),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '설정',
-                      style: AppTypography.subtitle.copyWith(
-                        color: AppColors.ink,
-                        fontWeight: FontWeight.w800,
+          SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: DeviceUtils.contentMaxWidth(context),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          AppIconCircleButton(
+                            icon: Icons.arrow_back_rounded,
+                            size: 44,
+                            onTap: Get.back,
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Text(
+                              '설정',
+                              style: GoogleFonts.blackHanSans(
+                                fontSize: 30,
+                                letterSpacing: 0,
+                                color: AppColors.ink,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                      const SizedBox(height: AppSpacing.xl),
+                      AppSurface(
+                        elevated: true,
+                        radius: AppRadius.lg,
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: Column(
+                          children: [
+                            Obx(() {
+                              final nickname =
+                                  authService.userNickname.value ?? '플레이어';
+                              return _SettingsTile(
+                                icon: Icons.person_rounded,
+                                title: nickname,
+                                subtitle: '닉네임 변경',
+                                onTap: onEditNickname,
+                              );
+                            }),
+                            const SizedBox(height: 10),
+                            Obx(() {
+                              return _SettingsTile(
+                                icon: settingsService.isHapticsOn.value
+                                    ? Icons.vibration_rounded
+                                    : Icons.notifications_off_rounded,
+                                title: '햅틱',
+                                subtitle: settingsService.isHapticsOn.value
+                                    ? '켜짐'
+                                    : '꺼짐',
+                                trailing: Switch(
+                                  value: settingsService.isHapticsOn.value,
+                                  activeColor: AppColors.ink,
+                                  activeTrackColor: AppColors.tileAmber,
+                                  inactiveThumbColor: AppColors.ink,
+                                  inactiveTrackColor: AppColors.surfaceMuted,
+                                  onChanged: (_) {
+                                    settingsService.toggleHaptics();
+                                  },
+                                ),
+                                onTap: () {
+                                  settingsService.toggleHaptics();
+                                },
+                              );
+                            }),
+                            const SizedBox(height: 10),
+                            _SettingsTile(
+                              icon: Icons.logout_rounded,
+                              title: '로그아웃',
+                              subtitle: '현재 계정에서 나가기',
+                              onTap: onSignOut,
+                            ),
+                            const SizedBox(height: 10),
+                            _SettingsTile(
+                              icon: Icons.delete_outline_rounded,
+                              title: '계정 삭제',
+                              subtitle: '계정과 기록 삭제',
+                              destructive: true,
+                              onTap: onDeleteAccount,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  IconButton(
-                    tooltip: '닫기',
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: Get.back,
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Obx(() {
-                final nickname = authService.userNickname.value ?? '플레이어';
-                return _SettingsTile(
-                  icon: Icons.person_rounded,
-                  title: nickname,
-                  subtitle: '닉네임',
-                  onTap: () {
-                    Get.back();
-                    homeState?._showEditNicknameDialog(authService);
-                  },
-                );
-              }),
-              const SizedBox(height: 8),
-              _SettingsTile(
-                icon: Icons.logout_rounded,
-                title: '로그아웃',
-                subtitle: '현재 계정에서 나가기',
-                onTap: () {
-                  Get.back();
-                  homeState?._confirmSignOut(authService);
-                },
-              ),
-              const SizedBox(height: 8),
-              _SettingsTile(
-                icon: Icons.delete_outline_rounded,
-                title: '계정 삭제',
-                subtitle: '계정과 기록 삭제',
-                destructive: true,
-                onTap: () {
-                  Get.back();
-                  homeState?._confirmDeleteAccount(authService);
-                },
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -530,6 +579,7 @@ class _SettingsTile extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
   final bool destructive;
+  final Widget? trailing;
 
   const _SettingsTile({
     required this.icon,
@@ -537,19 +587,25 @@ class _SettingsTile extends StatelessWidget {
     required this.subtitle,
     required this.onTap,
     this.destructive = false,
+    this.trailing,
   });
 
   @override
   Widget build(BuildContext context) {
     final color = destructive ? AppColors.dangerStrong : AppColors.ink;
 
-    return Material(
-      color: destructive ? AppColors.dangerSoft : AppColors.backgroundSoft,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
+    return Container(
+      decoration: BoxDecoration(
+        color: destructive ? AppColors.dangerSoft : AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.ink, width: AppStroke.soft),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           child: Row(
             children: [
@@ -581,12 +637,16 @@ class _SettingsTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: destructive ? color : AppColors.textSubtle,
-              ),
+              if (trailing != null)
+                trailing!
+              else
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: destructive ? color : AppColors.ink,
+                ),
             ],
           ),
+        ),
         ),
       ),
     );

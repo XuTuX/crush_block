@@ -43,6 +43,9 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
 
   final board = <List<String>>[].obs;
   final currentTurn = 'player1'.obs;
+  final turnExpiresAtMs = RxnInt();
+  final turnDurationMs = 15000.obs;
+  final serverTimeOffsetMs = 0.obs;
   final winner = RxnString();
   final winReason = RxnString();
   final walls = <Map<String, int>>[].obs;
@@ -357,6 +360,17 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
     currentRoomTitle.value = data['roomTitle']?.toString();
     roomStatus.value = data['status']?.toString() ?? 'idle';
     currentTurn.value = data['currentTurn']?.toString() ?? 'player1';
+    final rawTurnExpiresAt = data['turnExpiresAt'];
+    turnExpiresAtMs.value =
+        rawTurnExpiresAt is num ? rawTurnExpiresAt.toInt() : null;
+    final rawTurnDuration = data['turnDurationMs'];
+    turnDurationMs.value =
+        rawTurnDuration is num ? rawTurnDuration.toInt() : 15000;
+    final rawServerNow = data['serverNow'];
+    if (rawServerNow is num) {
+      serverTimeOffsetMs.value =
+          rawServerNow.toInt() - DateTime.now().millisecondsSinceEpoch;
+    }
     winner.value = data['winner']?.toString();
     winReason.value = data['winReason']?.toString();
     final rawGameSeed = data['gameSeed'];
@@ -415,6 +429,9 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
     currentRoomTitle.value = null;
     roomStatus.value = 'idle';
     currentTurn.value = 'player1';
+    turnExpiresAtMs.value = null;
+    turnDurationMs.value = 15000;
+    serverTimeOffsetMs.value = 0;
     gameSeed.value = null;
     winner.value = null;
     winReason.value = null;

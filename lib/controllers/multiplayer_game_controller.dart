@@ -28,6 +28,7 @@ class MultiplayerGameController extends GetxController {
   final opponentLeftMessage = RxnString();
   final hoverCells = <int>[].obs;
   final hoverColor = Rx<Color?>(null);
+  final invalidCells = <int>[].obs;
   final lastPlacedCells = <int>[].obs;
   final lastClearedCells = <int>[].obs;
   final hasPendingPlacement = false.obs;
@@ -39,6 +40,7 @@ class MultiplayerGameController extends GetxController {
   Worker? _lastMoveWorker;
   Timer? _lastPlacedTimer;
   Timer? _lastClearedTimer;
+  Timer? _invalidPlacementTimer;
   int? _pendingStartCol;
   int? _pendingStartRow;
   int _pendingRotation = 0;
@@ -65,6 +67,10 @@ class MultiplayerGameController extends GetxController {
     return opponent == null ? null : opponent['selectedBlock']?.toString();
   }
 
+  String? get currentTurnSelectedBlock {
+    return isMyTurn.value ? mySelectedBlock : opponentSelectedBlock;
+  }
+
   String? get myRole => _myPlayer()?['role']?.toString();
 
   String? get opponentRole => _opponentPlayer()?['role']?.toString();
@@ -89,6 +95,7 @@ class MultiplayerGameController extends GetxController {
     _lastMoveWorker?.dispose();
     _lastPlacedTimer?.cancel();
     _lastClearedTimer?.cancel();
+    _invalidPlacementTimer?.cancel();
     super.onClose();
   }
 
@@ -127,6 +134,10 @@ class MultiplayerGameController extends GetxController {
   }
 
   Color get myPlacementColor => myBlockColor.value;
+
+  Color get currentTurnBlockColor {
+    return isMyTurn.value ? myBlockColor.value : opponentBlockColor.value;
+  }
 
   bool canPlaceShapeAtStart(List<Offset> shape, int startRow, int startCol) {
     final board = _service.board;
@@ -197,11 +208,45 @@ class MultiplayerGameController extends GetxController {
     if (hoverColor.value != null) hoverColor.value = null;
   }
 
+  void showInvalidPlacement(
+    int centerRow,
+    int centerCol,
+    List<Offset> shape, {
+    int originRow = 1,
+    int originCol = 1,
+  }) {
+    final startRow = centerRow - originRow;
+    final startCol = centerCol - originCol;
+    final nextCells = shape
+        .map((offset) {
+          final row = startRow + offset.dy.toInt();
+          final col = startCol + offset.dx.toInt();
+          if (row < 0 || row >= gridRows || col < 0 || col >= gridColumns) {
+            return null;
+          }
+          return row * gridColumns + col;
+        })
+        .whereType<int>()
+        .toList();
+
+    invalidCells.assignAll(
+      nextCells.isEmpty ? [centerRow * gridColumns + centerCol] : nextCells,
+    );
+    _invalidPlacementTimer?.cancel();
+    _invalidPlacementTimer = Timer(const Duration(milliseconds: 360), () {
+      invalidCells.clear();
+    });
+  }
+
   void clearPendingPlacement() {
     _pendingStartCol = null;
     _pendingStartRow = null;
     hasPendingPlacement.value = false;
     clearHover();
+  }
+
+  bool isPendingCell(int index) {
+    return hasPendingPlacement.value && hoverCells.contains(index);
   }
 
   bool stageSelectedBlockAtCenter(

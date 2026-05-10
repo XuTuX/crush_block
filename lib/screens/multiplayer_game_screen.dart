@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -6,10 +8,12 @@ import '../controllers/multiplayer_game_controller.dart';
 import '../services/multiplayer_service.dart';
 import '../theme/app_design_system.dart';
 import '../theme/app_typography.dart';
+import '../widgets/home_screen/background_painter.dart';
 import 'multiplayer_game/mp_game_over_overlay.dart';
 import 'multiplayer_game/mp_leave_dialog.dart';
 import 'multiplayer_game/mp_shared_blocks.dart';
 import 'multiplayer_game/multiplayer_board.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class MultiplayerGameScreen extends StatefulWidget {
   final String roomId;
@@ -40,24 +44,40 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
   final MultiplayerService _service = Get.find<MultiplayerService>();
   final GlobalKey _gridKey = GlobalKey();
   int _currentRotation = 0;
+  int _turnSecondsRemaining = 15;
+  int _localTurnStartedAtMs = DateTime.now().millisecondsSinceEpoch;
+  Timer? _turnTimer;
+  final List<Worker> _turnClockWorkers = [];
 
   @override
   void initState() {
     super.initState();
-    controller = Get.put(MultiplayerGameController(
-      roomId: widget.roomId,
-      seed: widget.seed,
-      mode: widget.mode,
-      myUserId: widget.myUserId,
-      opponentUserId: widget.opponentUserId,
-      myNickname: widget.myNickname,
-      opponentNickname: widget.opponentNickname,
-    ));
+    controller = Get.put(
+      MultiplayerGameController(
+        roomId: widget.roomId,
+        seed: widget.seed,
+        mode: widget.mode,
+        myUserId: widget.myUserId,
+        opponentUserId: widget.opponentUserId,
+        myNickname: widget.myNickname,
+        opponentNickname: widget.opponentNickname,
+      ),
+      tag: widget.roomId,
+    );
+    _turnClockWorkers
+      ..add(ever(_service.currentTurn, (_) => _resetLocalTurnClock()))
+      ..add(ever(_service.turnExpiresAtMs, (_) => _syncTurnClock()))
+      ..add(ever(_service.roomStatus, (_) => _resetLocalTurnClock()));
+    _startTurnClock();
   }
 
   @override
   void dispose() {
-    Get.delete<MultiplayerGameController>();
+    for (final worker in _turnClockWorkers) {
+      worker.dispose();
+    }
+    _turnTimer?.cancel();
+    Get.delete<MultiplayerGameController>(tag: widget.roomId);
     super.dispose();
   }
 
@@ -76,25 +96,32 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
-        body: SafeArea(
-          child: Obx(() {
-            final status = _service.roomStatus.value;
-            return Stack(
-              children: [
-                if (status == 'selecting') _buildSelectionPhase(),
-                if (status == 'playing' || status == 'finished')
-                  _buildPlayingPhase(),
-                if (status == 'finished')
-                  MpGameOverOverlay(
-                    controller: controller,
-                    mode: widget.mode,
-                    myNickname: widget.myNickname,
-                    opponentNickname: widget.opponentNickname,
-                    roomId: widget.roomId,
-                  ),
-              ],
-            );
-          }),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: CustomPaint(painter: GridPatternPainter()),
+            ),
+            SafeArea(
+              child: Obx(() {
+                final status = _service.roomStatus.value;
+                return Stack(
+                  children: [
+                    if (status == 'selecting') _buildSelectionPhase(),
+                    if (status == 'playing' || status == 'finished')
+                      _buildPlayingPhase(),
+                    if (status == 'finished')
+                      MpGameOverOverlay(
+                        controller: controller,
+                        mode: widget.mode,
+                        myNickname: widget.myNickname,
+                        opponentNickname: widget.opponentNickname,
+                        roomId: widget.roomId,
+                      ),
+                  ],
+                );
+              }),
+            ),
+          ],
         ),
       ),
     );
@@ -104,19 +131,21 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     final mySelection = controller.mySelectedBlock;
     if (mySelection != null) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '$mySelection 선택 완료',
-              style: AppTypography.title.copyWith(color: AppColors.primary),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+          decoration: BoxDecoration(
+            color: AppColors.tileAmber,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.ink, width: AppStroke.strong),
+            boxShadow: AppShadows.hard(offset: 3),
+          ),
+          child: Text(
+            '$mySelection 선택 완료',
+            style: AppTypography.subtitle.copyWith(
+              color: AppColors.ink,
+              fontWeight: FontWeight.w900,
             ),
-            const SizedBox(height: 10),
-            Text(
-              '상대방을 기다리는 중',
-              style: AppTypography.body.copyWith(color: AppColors.textMuted),
-            ),
-          ],
+          ),
         ),
       );
     }
@@ -130,50 +159,40 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.xl),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '블록 선택',
-                      style: AppTypography.title.copyWith(
-                        color: AppColors.ink,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      alignment: WrapAlignment.center,
-                      children: blocks
-                          .map(
-                            (block) => InkWell(
-                              borderRadius: BorderRadius.circular(10),
-                              onTap: () => controller.selectBlock(block),
-                              child: Container(
-                                width: 62,
-                                height: 62,
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: AppColors.borderSoft,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    block,
-                                    style: AppTypography.subtitle.copyWith(
-                                      color: AppColors.ink,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  alignment: WrapAlignment.center,
+                  children: blocks
+                      .map(
+                        (block) => InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () => controller.selectBlock(block),
+                          child: Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: AppColors.ink,
+                                width: AppStroke.strong,
+                              ),
+                              boxShadow: AppShadows.hard(offset: 3),
+                            ),
+                            child: Center(
+                              child: Text(
+                                block,
+                                style: AppTypography.title.copyWith(
+                                  color: AppColors.ink,
+                                  fontWeight: FontWeight.w900,
                                 ),
                               ),
                             ),
-                          )
-                          .toList(),
-                    ),
-                  ],
+                          ),
+                        ),
+                      )
+                      .toList(),
                 ),
               ),
             ),
@@ -189,12 +208,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final useSideRail = constraints.maxWidth >= 620 &&
-            constraints.maxWidth > constraints.maxHeight;
-        if (useSideRail) {
-          return _buildSideRailLayout(constraints);
-        }
-
         return _buildStackedLayout(constraints);
       },
     );
@@ -202,10 +215,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
   Widget _buildStackedLayout(BoxConstraints constraints) {
     final padding = constraints.maxWidth < 380 ? 10.0 : 14.0;
-    final gap = constraints.maxHeight < 650 ? 10.0 : 14.0;
-    final maxContentWidth = constraints.maxWidth > 520
-        ? 430.0
-        : (constraints.maxWidth - padding * 2).clamp(0.0, 430.0);
+    final gap = constraints.maxHeight < 650 ? 10.0 : 16.0;
+    final maxContentWidth =
+        (constraints.maxWidth - padding * 2).clamp(0.0, 820.0).toDouble();
     final gridSize = _calculateStackedGridSize(
       constraints,
       padding: padding,
@@ -230,7 +242,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(height: 76, child: _buildMatchHeader()),
+                  SizedBox(height: 142, child: _buildMatchHeader()),
                   SizedBox(height: gap),
                   _buildBoardPanel(gridSize, cellSize),
                   SizedBox(height: gap),
@@ -244,59 +256,17 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     );
   }
 
-  Widget _buildSideRailLayout(BoxConstraints constraints) {
-    const padding = 16.0;
-    const gap = 18.0;
-    final railWidth = (constraints.maxWidth * 0.28).clamp(220, 264).toDouble();
-    final gridByWidth =
-        constraints.maxWidth - padding * 2 - gap - railWidth - 18;
-    final gridByHeight = constraints.maxHeight - padding * 2 - 18;
-    final gridSize = gridByWidth < gridByHeight ? gridByWidth : gridByHeight;
-    final clampedGridSize = gridSize.clamp(180, 560).toDouble();
-    final cellSize = clampedGridSize / gridColumns;
-
-    return SingleChildScrollView(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Padding(
-          padding: const EdgeInsets.all(padding),
-          child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _buildBoardPanel(clampedGridSize, cellSize),
-                const SizedBox(width: gap),
-                SizedBox(
-                  width: railWidth,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(height: 76, child: _buildMatchHeader()),
-                      const SizedBox(height: gap),
-                      _buildControlTray(cellSize),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   double _calculateStackedGridSize(
     BoxConstraints constraints, {
     required double padding,
     required double gap,
     required double maxContentWidth,
   }) {
-    const headerHeight = 76.0;
-    const boardPadding = 18.0;
-    const trayPadding = 80.0;
-    const previewRatio = 3.05 / gridColumns;
-    final maxByWidth = maxContentWidth - 18;
+    const headerHeight = 142.0;
+    const boardPadding = 8.0;
+    const trayPadding = 36.0;
+    const previewRatio = 2.75 / gridColumns;
+    final maxByWidth = maxContentWidth - 8;
     final maxByHeight = (constraints.maxHeight -
             padding * 2 -
             headerHeight -
@@ -310,39 +280,51 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
   Widget _buildMatchHeader() {
     return Obx(() {
-      final isMyTurn = controller.isMyTurn.value;
-      final finished = controller.gameFinishedRx.value;
+      final myScore = _scoreForRole(controller.myRole);
+      final opponentScore = _scoreForRole(controller.opponentRole);
 
-      return Row(
+      return Column(
         children: [
           Expanded(
-            child: _PlayerChip(
-              nickname: widget.myNickname,
-              label: '나',
-              color: AppColors.primary,
-              icon: Icons.circle_rounded,
-              active: isMyTurn && !finished,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: _TurnBadge(
-              label: finished
-                  ? _winnerText()
-                  : isMyTurn
-                      ? '내 턴'
-                      : '상대 턴',
-              active: isMyTurn && !finished,
-            ),
-          ),
-          Expanded(
-            child: _PlayerChip(
-              nickname: widget.opponentNickname,
-              label: '상대',
-              color: AppColors.tileCoral,
-              icon: Icons.change_history_rounded,
-              active: !isMyTurn && !finished,
-              alignEnd: true,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _ScoreBlock(
+                    label: 'YOU',
+                    score: _formatScore(myScore),
+                    color: AppColors.primary,
+                  ),
+                ),
+                SizedBox(
+                  width: 96,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'VS',
+                        style: AppTypography.title.copyWith(
+                          color: AppColors.ink.withValues(alpha: 0.78),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _TimerBadge(
+                        label: _formatTurnClock(),
+                        urgent: _turnSecondsRemaining <= 5,
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: _ScoreBlock(
+                    label: 'OPPONENT',
+                    score: _formatScore(opponentScore),
+                    color: AppColors.tileCoral,
+                    alignEnd: true,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -352,18 +334,12 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
   Widget _buildBoardPanel(double gridSize, double cellSize) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderSoft),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.ink.withValues(alpha: 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.ink, width: AppStroke.strong),
+        boxShadow: AppShadows.hard(offset: 4),
       ),
       child: SizedBox(
         key: _gridKey,
@@ -374,6 +350,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
           gridSize: gridSize,
           cellSize: cellSize,
           pulseValue: 0,
+          rotation: _currentRotation,
         ),
       ),
     );
@@ -388,70 +365,19 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
       onRotate: _rotateCurrentBlock,
     );
 
-    return Obx(() {
-      final canPlace = controller.isMyTurn.value &&
-          controller.hasPendingPlacement.value &&
-          !controller.gameFinishedRx.value;
-
-      return Container(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderSoft),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.ink.withValues(alpha: 0.05),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            const Positioned(
-              left: 18,
-              top: 18,
-              child: _TrayDots(),
-            ),
-            const Positioned(
-              right: 18,
-              top: 18,
-              child: _TrayDots(),
-            ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                block,
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: 142,
-                  height: 44,
-                  child: ElevatedButton.icon(
-                    onPressed:
-                        canPlace ? controller.confirmPendingPlacement : null,
-                    icon: const Icon(Icons.check_rounded, size: 19),
-                    label: const Text('배치하기'),
-                    style: ElevatedButton.styleFrom(
-                      elevation: 0,
-                      backgroundColor: AppColors.primary,
-                      disabledBackgroundColor: AppColors.surfaceMuted,
-                      foregroundColor: AppColors.onPrimary,
-                      disabledForegroundColor: AppColors.textSubtle,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      textStyle: AppTypography.button,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-    });
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.ink, width: AppStroke.strong),
+        boxShadow: AppShadows.hard(offset: 4),
+      ),
+      child: Center(
+        child: block,
+      ),
+    );
   }
 
   void _rotateCurrentBlock() {
@@ -465,196 +391,181 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     });
   }
 
-  String _winnerText() {
-    final won = controller.iWon.value;
-    if (won == true) return '내가 이겼습니다';
-    if (won == false) return '상대가 이겼습니다';
-    return '무승부입니다';
+  int _scoreForRole(String? role) {
+    if (role == null) return 0;
+    var total = 0;
+    for (final row in _service.board) {
+      for (final cell in row) {
+        if (cell == role) total += 1;
+      }
+    }
+    return total;
+  }
+
+  String _formatScore(int score) {
+    return score.clamp(0, 99).toString().padLeft(2, '0');
+  }
+
+  String _formatTurnClock() {
+    final minutes = _turnSecondsRemaining ~/ 60;
+    final seconds = _turnSecondsRemaining % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  void _syncTurnClock() {
+    if (!mounted) return;
+    setState(() => _turnSecondsRemaining = _calculateTurnSecondsRemaining());
+  }
+
+  void _resetLocalTurnClock() {
+    _localTurnStartedAtMs = DateTime.now().millisecondsSinceEpoch;
+    _syncTurnClock();
+  }
+
+  int _calculateTurnSecondsRemaining() {
+    final durationMs = _service.turnDurationMs.value;
+    final expiresAt = _service.turnExpiresAtMs.value;
+    if (_service.roomStatus.value != 'playing') {
+      return (durationMs / 1000).ceil();
+    }
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final remainingMs = expiresAt == null
+        ? durationMs - (now - _localTurnStartedAtMs)
+        : expiresAt - (now + _service.serverTimeOffsetMs.value);
+    if (remainingMs <= 0) return 0;
+    return (remainingMs / 1000).ceil();
+  }
+
+  void _startTurnClock() {
+    _turnTimer?.cancel();
+    _syncTurnClock();
+    _turnTimer = Timer.periodic(const Duration(milliseconds: 250), (_) {
+      if (!mounted || controller.gameFinishedRx.value) return;
+      _syncTurnClock();
+    });
   }
 }
 
-class _PlayerChip extends StatelessWidget {
-  final String nickname;
+class _ScoreBlock extends StatelessWidget {
   final String label;
+  final String score;
   final Color color;
-  final IconData icon;
-  final bool active;
   final bool alignEnd;
 
-  const _PlayerChip({
-    required this.nickname,
+  const _ScoreBlock({
     required this.label,
+    required this.score,
     required this.color,
-    required this.icon,
-    required this.active,
     this.alignEnd = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 160),
-      height: 70,
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderSoft),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.ink.withValues(alpha: active ? 0.08 : 0.04),
-            blurRadius: active ? 14 : 10,
-            offset: const Offset(0, 6),
-          ),
-          BoxShadow(
-            color: active ? color : Colors.transparent,
-            blurRadius: 0,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment:
-            alignEnd ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: [
-          if (!alignEnd) _BlockMark(color: color, icon: icon),
-          if (!alignEnd) const SizedBox(width: 7),
-          Flexible(
-            child: Column(
-              crossAxisAlignment:
-                  alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: AppTypography.tiny.copyWith(
-                    color: AppColors.textMuted,
-                    fontWeight: FontWeight.w700,
+    return Column(
+      crossAxisAlignment:
+          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Row(
+          mainAxisAlignment:
+              alignEnd ? MainAxisAlignment.end : MainAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 13,
+              height: 13,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.28),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: alignEnd ? TextAlign.right : TextAlign.left,
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.ink,
+                  fontWeight: FontWeight.w900,
                 ),
-                Text(
-                  nickname,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.ink,
-                    fontWeight: FontWeight.w800,
-                  ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
+          child: Text(
+            score,
+            style: GoogleFonts.blackHanSans(
+              color: color,
+              fontSize: 58,
+              height: 1,
+              letterSpacing: 0,
+              shadows: [
+                Shadow(
+                  color: AppColors.ink.withValues(alpha: 0.18),
+                  offset: const Offset(2, 2),
+                  blurRadius: 0,
                 ),
               ],
             ),
           ),
-          if (alignEnd) const SizedBox(width: 7),
-          if (alignEnd) _BlockMark(color: color, icon: icon),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-class _TurnBadge extends StatelessWidget {
+class _TimerBadge extends StatelessWidget {
   final String label;
-  final bool active;
+  final bool urgent;
 
-  const _TurnBadge({
+  const _TimerBadge({
     required this.label,
-    required this.active,
+    required this.urgent,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minWidth: 88, maxWidth: 122),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      constraints: const BoxConstraints(minWidth: 84),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFF222832),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.ink.withValues(alpha: 0.08)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.ink.withValues(alpha: 0.18),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: urgent ? AppColors.dangerSoft : AppColors.tileAmber,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.ink,
+          width: AppStroke.strong,
+        ),
+        boxShadow: AppShadows.hard(offset: 2),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Flexible(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.onPrimary,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: active ? AppColors.primary : AppColors.tileCoral,
-              shape: BoxShape.circle,
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            style: AppTypography.subtitle.copyWith(
+              color: urgent ? AppColors.dangerStrong : AppColors.ink,
+              fontWeight: FontWeight.w900,
+              height: 1,
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _BlockMark extends StatelessWidget {
-  final Color color;
-  final IconData icon;
-
-  const _BlockMark({
-    required this.color,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: AppColors.ink.withValues(alpha: 0.16)),
-      ),
-      child: Icon(icon, size: 21, color: AppColors.onPrimary),
-    );
-  }
-}
-
-class _TrayDots extends StatelessWidget {
-  const _TrayDots();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 28,
-      height: 28,
-      child: Wrap(
-        spacing: 5,
-        runSpacing: 5,
-        children: List.generate(
-          9,
-          (_) => Container(
-            width: 5,
-            height: 5,
-            decoration: BoxDecoration(
-              color: AppColors.borderSoft.withValues(alpha: 0.55),
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
       ),
     );
   }
