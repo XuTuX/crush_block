@@ -226,6 +226,29 @@ class _HomeScreenState extends State<HomeScreen> {
                               );
                             },
                           ),
+                          const SizedBox(height: AppSpacing.md),
+                          AppActionButton(
+                            label: '화면 디버그 모드 (로컬)',
+                            icon: Icons.bug_report_rounded,
+                            tone: AppButtonTone.secondary,
+                            onPressed: () {
+                              _multiplayerService.startDebugOfflineGame();
+                              final myUserId = authService.user.value?.id ?? 'debug_user_1';
+                              final myNickname = authService.userNickname.value ?? 'Debug Player';
+                              Get.to(
+                                () => MultiplayerGameScreen(
+                                  roomId: 'debug_room',
+                                  mode: MultiplayerMode.friendly,
+                                  myUserId: myUserId,
+                                  opponentUserId: 'debug_user_2',
+                                  opponentNickname: 'Mock Opponent',
+                                  myNickname: myNickname,
+                                ),
+                                transition: Transition.fadeIn,
+                                duration: const Duration(milliseconds: 260),
+                              );
+                            },
+                          ),
                           const SizedBox(height: AppSpacing.lg),
                           Obx(() {
                             final message =

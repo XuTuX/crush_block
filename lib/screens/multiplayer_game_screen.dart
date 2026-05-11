@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -109,6 +110,12 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
                     if (status == 'selecting') _buildSelectionPhase(),
                     if (status == 'playing' || status == 'finished')
                       _buildPlayingPhase(),
+                    if (status == 'playing' || status == 'selecting') ...[
+                      Obx(() => controller.isOpponentDisconnected
+                          ? const _NetworkStatusOverlay()
+                          : const SizedBox.shrink()),
+                      _YourTurnOverlay(controller: controller),
+                    ],
                     if (status == 'finished')
                       MpGameOverOverlay(
                         controller: controller,
@@ -208,7 +215,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return _buildStackedLayout(constraints);
+        return _BoardShakeWrapper(
+          controller: controller,
+          child: _buildStackedLayout(constraints),
+        );
       },
     );
   }
@@ -570,3 +580,226 @@ class _TimerBadge extends StatelessWidget {
     );
   }
 }
+
+class _NetworkStatusOverlay extends StatelessWidget {
+  const _NetworkStatusOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: 16,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.dangerStrong,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: AppShadows.hard(offset: 2),
+            border: Border.all(color: AppColors.ink, width: AppStroke.strong),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.surface,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '상대방 연결을 기다리는 중...',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.surface,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _YourTurnOverlay extends StatefulWidget {
+  final MultiplayerGameController controller;
+
+  const _YourTurnOverlay({required this.controller});
+
+  @override
+  State<_YourTurnOverlay> createState() => _YourTurnOverlayState();
+}
+
+class _YourTurnOverlayState extends State<_YourTurnOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _opacityAnimation;
+  Worker? _turnWorker;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+          tween: Tween(begin: 0.5, end: 1.1)
+              .chain(CurveTween(curve: Curves.easeOutBack)),
+          weight: 15),
+      TweenSequenceItem(
+          tween: Tween(begin: 1.1, end: 1.0)
+              .chain(CurveTween(curve: Curves.easeOut)),
+          weight: 10),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 60),
+      TweenSequenceItem(
+          tween: Tween(begin: 1.0, end: 0.8)
+              .chain(CurveTween(curve: Curves.easeIn)),
+          weight: 15),
+    ]).animate(_animController);
+
+    _opacityAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+          tween: Tween(begin: 0.0, end: 1.0)
+              .chain(CurveTween(curve: Curves.easeIn)),
+          weight: 10),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 75),
+      TweenSequenceItem(
+          tween: Tween(begin: 1.0, end: 0.0)
+              .chain(CurveTween(curve: Curves.easeOut)),
+          weight: 15),
+    ]).animate(_animController);
+
+    _turnWorker = ever(widget.controller.isMyTurn, (isMyTurn) {
+      if (isMyTurn && !widget.controller.gameFinishedRx.value) {
+        _animController.forward(from: 0.0);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _turnWorker?.dispose();
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: _animController,
+          builder: (context, child) {
+            if (_animController.isDismissed) return const SizedBox.shrink();
+            return Center(
+              child: Opacity(
+                opacity: _opacityAnimation.value,
+                child: Transform.scale(
+                  scale: _scaleAnimation.value,
+                  child: Transform.translate(
+                    offset: const Offset(0, -50),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                            color: AppColors.ink, width: AppStroke.strong),
+                        boxShadow: AppShadows.hard(offset: 4),
+                      ),
+                      child: Text(
+                        'YOUR TURN!',
+                        style: GoogleFonts.blackHanSans(
+                          color: AppColors.ink,
+                          fontSize: 42,
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _BoardShakeWrapper extends StatefulWidget {
+  final MultiplayerGameController controller;
+  final Widget child;
+
+  const _BoardShakeWrapper({
+    required this.controller,
+    required this.child,
+  });
+
+  @override
+  State<_BoardShakeWrapper> createState() => _BoardShakeWrapperState();
+}
+
+class _BoardShakeWrapperState extends State<_BoardShakeWrapper>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  Worker? _placedWorker;
+  Worker? _clearedWorker;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _placedWorker = ever(widget.controller.lastPlacedCells, (cells) {
+      if (cells.isNotEmpty) {
+        _animController.duration = const Duration(milliseconds: 150);
+        _animController.forward(from: 0.0);
+      }
+    });
+    _clearedWorker = ever(widget.controller.lastClearedCells, (cells) {
+      if (cells.isNotEmpty) {
+        _animController.duration = const Duration(milliseconds: 350);
+        _animController.forward(from: 0.0);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _placedWorker?.dispose();
+    _clearedWorker?.dispose();
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animController,
+      builder: (context, child) {
+        final double t = _animController.value;
+        if (t == 0.0 || t == 1.0) return child!;
+        
+        final double offset = 5 * math.sin(t * math.pi * 4) * (1 - t);
+        return Transform.translate(
+          offset: Offset(offset, offset / 2),
+          child: child,
+        );
+      },
+      child: widget.child,
+    );
+  }
+}
+

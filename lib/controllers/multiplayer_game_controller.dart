@@ -75,6 +75,11 @@ class MultiplayerGameController extends GetxController {
 
   String? get opponentRole => _opponentPlayer()?['role']?.toString();
 
+  bool get isOpponentDisconnected {
+    final opponent = _opponentPlayer();
+    return opponent != null && opponent['connected'] == false;
+  }
+
   @override
   void onInit() {
     super.onInit();

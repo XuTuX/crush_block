@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:socket_io_client/socket_io_client.dart' as socket_io;
 
 import '../config/app_config.dart';
+import '../constant.dart';
 import 'auth_service.dart';
 
 enum MultiplayerMode { ranked, friendly }
@@ -50,6 +51,8 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
   final winReason = RxnString();
   final walls = <Map<String, int>>[].obs;
   final lastMove = Rxn<Map<String, dynamic>>();
+
+  bool isDebugMode = false;
 
   socket_io.Socket? socket;
 
@@ -153,6 +156,16 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
   void selectBlock(String blockType) {
     final roomId = currentRoomId.value;
     if (roomId == null) return;
+    
+    if (isDebugMode) {
+      final me = players.firstWhereOrNull((p) => p['is_me'] == true);
+      if (me != null) {
+        me['selectedBlock'] = blockType;
+        players.refresh();
+      }
+      return;
+    }
+    
     socket?.emit('select_block', {
       'roomId': roomId,
       'blockType': blockType,
@@ -162,6 +175,42 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
   void placeBlock(int x, int y, int rotation) {
     final roomId = currentRoomId.value;
     if (roomId == null) return;
+    
+    if (isDebugMode) {
+      // Mock placing a block for debug UI testing
+      final me = players.firstWhereOrNull((p) => p['is_me'] == true);
+      final role = me?['role']?.toString();
+      final blockType = me?['selectedBlock']?.toString();
+      
+      if (me != null && role != null && blockType != null) {
+        // Just a dummy simulation: set a few cells and clear selection
+        final newBoard = List<List<String>>.from(board.map((row) => List<String>.from(row)));
+        final placed = <Map<String, int>>[];
+        
+        // Very rough block filling just to trigger animations
+        for (int dy = 0; dy < 2; dy++) {
+          for (int dx = 0; dx < 2; dx++) {
+             int cy = y + dy;
+             int cx = x + dx;
+             if (cy >= 0 && cy < gridRows && cx >= 0 && cx < gridColumns) {
+               newBoard[cy][cx] = role;
+               placed.add({'x': cx, 'y': cy});
+             }
+          }
+        }
+        
+        board.value = newBoard;
+        me['selectedBlock'] = null;
+        lastMove.value = {
+          'placedCells': placed,
+          'clearedCells': [], // No mock clears to keep it simple
+        };
+        currentTurn.value = 'player2'; // switch turn to freeze
+        players.refresh();
+      }
+      return;
+    }
+    
     socket?.emit('place_block', {
       'roomId': roomId,
       'x': x,
@@ -171,6 +220,7 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
   }
 
   Future<void> leaveRoom({bool countAsForfeit = false}) async {
+    isDebugMode = false;
     final roomId = currentRoomId.value;
     final auth = Get.find<AuthService>();
     final userId = auth.user.value?.id;
@@ -454,5 +504,50 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) => mutation());
     }
+  }
+
+  void startDebugOfflineGame() {
+    isDebugMode = true;
+    final auth = Get.find<AuthService>();
+    final userId = auth.user.value?.id ?? 'debug_user_1';
+    final nickname = auth.userNickname.value ?? 'Debug Player';
+
+    _clearRoomState();
+    
+    currentRoomId.value = 'debug_room';
+    currentRoomTitle.value = 'UI Debug Game';
+    roomStatus.value = 'selecting'; // Start in selection phase
+    currentTurn.value = 'player1';
+    turnDurationMs.value = 60000;
+    turnExpiresAtMs.value = DateTime.now().millisecondsSinceEpoch + 60000;
+    
+    final emptyBoard = List.generate(
+      gridRows, 
+      (_) => List.generate(gridColumns, (_) => 'empty')
+    );
+    board.value = emptyBoard;
+
+    players.value = [
+      {
+        'user_id': userId,
+        'client_id': _clientId,
+        'is_me': true,
+        'profiles': {'nickname': nickname},
+        'is_ready': true,
+        'role': 'player1',
+        'selectedBlock': null,
+        'connected': true,
+      },
+      {
+        'user_id': 'debug_user_2',
+        'client_id': 'dummy_client_2',
+        'is_me': false,
+        'profiles': {'nickname': 'Mock Opponent'},
+        'is_ready': true,
+        'role': 'player2',
+        'selectedBlock': 'T',
+        'connected': true,
+      }
+    ];
   }
 }
