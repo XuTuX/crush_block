@@ -57,7 +57,12 @@ class MultiplayerGameController extends GetxController {
 
   bool get gameFinished => _service.roomStatus.value == 'finished';
 
+  bool get isHotSeat => _service.isDebugMode;
+
   String? get mySelectedBlock {
+    if (isHotSeat && !isMyTurn.value) {
+      return opponentSelectedBlock;
+    }
     final me = _myPlayer();
     return me == null ? null : me['selectedBlock']?.toString();
   }
@@ -138,7 +143,12 @@ class MultiplayerGameController extends GetxController {
     return maxY + 1 > 3 ? maxY + 1 : 3;
   }
 
-  Color get myPlacementColor => myBlockColor.value;
+  Color get myPlacementColor {
+    if (isHotSeat && !isMyTurn.value) {
+      return opponentBlockColor.value;
+    }
+    return myBlockColor.value;
+  }
 
   Color get currentTurnBlockColor {
     return isMyTurn.value ? myBlockColor.value : opponentBlockColor.value;
@@ -171,7 +181,7 @@ class MultiplayerGameController extends GetxController {
     int rotation = 0,
     bool stagePlacement = false,
   }) {
-    if (!isMyTurn.value || gameFinishedRx.value) {
+    if ((!isMyTurn.value && !isHotSeat) || gameFinishedRx.value) {
       if (stagePlacement) {
         clearPendingPlacement();
       } else {
@@ -262,7 +272,7 @@ class MultiplayerGameController extends GetxController {
     int originCol = 1,
   }) {
     final blockType = mySelectedBlock;
-    if (blockType == null || !isMyTurn.value || gameFinishedRx.value) {
+    if (blockType == null || (!isMyTurn.value && !isHotSeat) || gameFinishedRx.value) {
       clearPendingPlacement();
       return false;
     }
@@ -294,7 +304,7 @@ class MultiplayerGameController extends GetxController {
     if (startCol == null ||
         startRow == null ||
         blockType == null ||
-        !isMyTurn.value ||
+        (!isMyTurn.value && !isHotSeat) ||
         gameFinishedRx.value) {
       clearPendingPlacement();
       return false;
@@ -320,7 +330,7 @@ class MultiplayerGameController extends GetxController {
     int originCol = 1,
   }) {
     final blockType = mySelectedBlock;
-    if (blockType == null || !isMyTurn.value || gameFinishedRx.value) {
+    if (blockType == null || (!isMyTurn.value && !isHotSeat) || gameFinishedRx.value) {
       clearHover();
       return false;
     }

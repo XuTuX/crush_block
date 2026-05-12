@@ -162,6 +162,9 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
       if (me != null) {
         me['selectedBlock'] = blockType;
         players.refresh();
+        Future.delayed(const Duration(milliseconds: 600), () {
+          roomStatus.value = 'playing';
+        });
       }
       return;
     }
@@ -177,35 +180,81 @@ class MultiplayerService extends GetxService with WidgetsBindingObserver {
     if (roomId == null) return;
     
     if (isDebugMode) {
-      // Mock placing a block for debug UI testing
-      final me = players.firstWhereOrNull((p) => p['is_me'] == true);
-      final role = me?['role']?.toString();
-      final blockType = me?['selectedBlock']?.toString();
+      final turnPlayerRole = currentTurn.value;
+      final activePlayer = players.firstWhereOrNull((p) => p['role'] == turnPlayerRole);
+      final role = activePlayer?['role']?.toString();
+      final blockType = activePlayer?['selectedBlock']?.toString();
       
-      if (me != null && role != null && blockType != null) {
-        // Just a dummy simulation: set a few cells and clear selection
+      if (activePlayer != null && role != null && blockType != null) {
+        final shapeRotations = mpBlockShapesByType[blockType];
+        if (shapeRotations == null || shapeRotations.isEmpty) return;
+        final offsets = shapeRotations[rotation % shapeRotations.length];
+        
         final newBoard = List<List<String>>.from(board.map((row) => List<String>.from(row)));
         final placed = <Map<String, int>>[];
         
-        // Very rough block filling just to trigger animations
-        for (int dy = 0; dy < 2; dy++) {
-          for (int dx = 0; dx < 2; dx++) {
-             int cy = y + dy;
-             int cx = x + dx;
-             if (cy >= 0 && cy < gridRows && cx >= 0 && cx < gridColumns) {
-               newBoard[cy][cx] = role;
-               placed.add({'x': cx, 'y': cy});
-             }
+        for (final offset in offsets) {
+          int cy = y + offset.dy.toInt();
+          int cx = x + offset.dx.toInt();
+          if (cy >= 0 && cy < gridRows && cx >= 0 && cx < gridColumns) {
+            newBoard[cy][cx] = role;
+            placed.add({'x': cx, 'y': cy});
           }
         }
         
+        final cleared = <Map<String, int>>[];
+        
+        for (int r = 0; r < gridRows; r++) {
+          if (newBoard[r].every((cell) => cell != 'empty')) {
+            for (int c = 0; c < gridColumns; c++) cleared.add({'x': c, 'y': r});
+          }
+        }
+        for (int c = 0; c < gridColumns; c++) {
+          bool full = true;
+          for (int r = 0; r < gridRows; r++) {
+            if (newBoard[r][c] == 'empty') { full = false; break; }
+          }
+          if (full) {
+            for (int r = 0; r < gridRows; r++) cleared.add({'x': c, 'y': r});
+          }
+        }
+        if (gridRows == 9 && gridColumns == 9) {
+          for (int gr = 0; gr < 3; gr++) {
+            for (int gc = 0; gc < 3; gc++) {
+              bool full = true;
+              for (int r = 0; r < 3; r++) {
+                for (int c = 0; c < 3; c++) {
+                  if (newBoard[gr * 3 + r][gc * 3 + c] == 'empty') { full = false; break; }
+                }
+              }
+              if (full) {
+                for (int r = 0; r < 3; r++) {
+                  for (int c = 0; c < 3; c++) {
+                    cleared.add({'x': gc * 3 + c, 'y': gr * 3 + r});
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        final uniqueCleared = <String, Map<String, int>>{};
+        for (var cl in cleared) {
+          uniqueCleared['${cl['x']}_${cl['y']}'] = cl;
+        }
+        for (var cl in uniqueCleared.values) {
+          newBoard[cl['y']!][cl['x']!] = 'empty';
+        }
+        
         board.value = newBoard;
-        me['selectedBlock'] = null;
         lastMove.value = {
           'placedCells': placed,
-          'clearedCells': [], // No mock clears to keep it simple
+          'clearedCells': uniqueCleared.values.toList(),
         };
-        currentTurn.value = 'player2'; // switch turn to freeze
+        
+        final nextTurn = turnPlayerRole == 'player1' ? 'player2' : 'player1';
+        currentTurn.value = nextTurn;
+        turnExpiresAtMs.value = DateTime.now().millisecondsSinceEpoch + turnDurationMs.value;
         players.refresh();
       }
       return;

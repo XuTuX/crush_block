@@ -36,7 +36,7 @@ class MultiplayerDraggableBlock extends StatelessWidget {
         final color = controller.myPlacementColor;
         final columns = controller.visualColumnsFor(shape);
         final rows = controller.visualRowsFor(shape);
-        final canDrag = controller.isMyTurn.value &&
+        final canDrag = (controller.isMyTurn.value || controller.isHotSeat) &&
             !controller.gameFinishedRx.value &&
             shape.isNotEmpty;
 

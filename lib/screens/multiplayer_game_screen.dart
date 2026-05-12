@@ -9,6 +9,7 @@ import '../controllers/multiplayer_game_controller.dart';
 import '../services/multiplayer_service.dart';
 import '../theme/app_design_system.dart';
 import '../theme/app_typography.dart';
+import '../widgets/brand_assets.dart';
 import '../widgets/home_screen/background_painter.dart';
 import 'multiplayer_game/mp_game_over_overlay.dart';
 import 'multiplayer_game/mp_leave_dialog.dart';
@@ -138,21 +139,43 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     final mySelection = controller.mySelectedBlock;
     if (mySelection != null) {
       return Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-          decoration: BoxDecoration(
-            color: AppColors.tileAmber,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.ink, width: AppStroke.strong),
-            boxShadow: AppShadows.hard(offset: 3),
-          ),
-          child: Text(
-            '$mySelection 선택 완료',
-            style: AppTypography.subtitle.copyWith(
-              color: AppColors.ink,
-              fontWeight: FontWeight.w900,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const AppBrandLogo(size: 56),
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.tileAmber,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.ink, width: AppStroke.strong),
+                boxShadow: AppShadows.hard(offset: 3),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check_circle_rounded, color: AppColors.ink, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    '$mySelection 선택 완료',
+                    style: GoogleFonts.blackHanSans(
+                      color: AppColors.ink,
+                      fontSize: 18,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              '상대방을 기다리는 중...',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -166,40 +189,66 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.xl),
-                child: Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  alignment: WrapAlignment.center,
-                  children: blocks
-                      .map(
-                        (block) => InkWell(
-                          borderRadius: BorderRadius.circular(14),
-                          onTap: () => controller.selectBlock(block),
-                          child: Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: AppColors.ink,
-                                width: AppStroke.strong,
-                              ),
-                              boxShadow: AppShadows.hard(offset: 3),
-                            ),
-                            child: Center(
-                              child: Text(
-                                block,
-                                style: AppTypography.title.copyWith(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const AppBrandLogo(size: 64),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      '블록 선택',
+                      style: GoogleFonts.blackHanSans(
+                        color: AppColors.ink,
+                        fontSize: 28,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      '사용할 블록을 골라주세요',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      alignment: WrapAlignment.center,
+                      children: blocks.asMap().entries.map(
+                        (entry) {
+                          final paletteColor = AppColors.areaPalette[
+                              entry.key % AppColors.areaPalette.length];
+                          return InkWell(
+                            borderRadius: BorderRadius.circular(14),
+                            onTap: () => controller.selectBlock(entry.value),
+                            child: Container(
+                              width: 68,
+                              height: 68,
+                              decoration: BoxDecoration(
+                                color: paletteColor.withValues(alpha: 0.18),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
                                   color: AppColors.ink,
-                                  fontWeight: FontWeight.w900,
+                                  width: AppStroke.strong,
+                                ),
+                                boxShadow: AppShadows.hard(offset: 3),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  entry.value,
+                                  style: GoogleFonts.blackHanSans(
+                                    color: AppColors.ink,
+                                    fontSize: 26,
+                                    letterSpacing: 0,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                      )
-                      .toList(),
+                          );
+                        },
+                      ).toList(),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -292,6 +341,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     return Obx(() {
       final myScore = _scoreForRole(controller.myRole);
       final opponentScore = _scoreForRole(controller.opponentRole);
+      final isMyTurn = controller.isMyTurn.value;
 
       return Column(
         children: [
@@ -301,9 +351,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
               children: [
                 Expanded(
                   child: _ScoreBlock(
-                    label: 'YOU',
+                    label: widget.myNickname,
                     score: _formatScore(myScore),
                     color: AppColors.primary,
+                    active: isMyTurn,
                   ),
                 ),
                 SizedBox(
@@ -313,9 +364,10 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
                     children: [
                       Text(
                         'VS',
-                        style: AppTypography.title.copyWith(
-                          color: AppColors.ink.withValues(alpha: 0.78),
-                          fontWeight: FontWeight.w500,
+                        style: GoogleFonts.blackHanSans(
+                          color: AppColors.ink.withValues(alpha: 0.6),
+                          fontSize: 22,
+                          letterSpacing: 0,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -328,10 +380,11 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
                 ),
                 Expanded(
                   child: _ScoreBlock(
-                    label: 'OPPONENT',
+                    label: widget.opponentNickname,
                     score: _formatScore(opponentScore),
                     color: AppColors.tileCoral,
                     alignEnd: true,
+                    active: !isMyTurn,
                   ),
                 ),
               ],
@@ -375,24 +428,56 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
       onRotate: _rotateCurrentBlock,
     );
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.ink, width: AppStroke.strong),
-        boxShadow: AppShadows.hard(offset: 4),
-      ),
-      child: Center(
-        child: block,
-      ),
-    );
+    return Obx(() {
+      final isMyTurn = controller.isMyTurn.value;
+      final turnLabel = isMyTurn ? '내 차례' : '상대 차례';
+      final turnColor = isMyTurn ? AppColors.primary : AppColors.tileCoral;
+
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.ink, width: AppStroke.strong),
+          boxShadow: AppShadows.hard(offset: 4),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: turnColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  turnLabel,
+                  style: GoogleFonts.blackHanSans(
+                    color: turnColor,
+                    fontSize: 13,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Center(child: block),
+          ],
+        ),
+      );
+    });
   }
 
   void _rotateCurrentBlock() {
     final canPlay =
-        controller.isMyTurn.value && !controller.gameFinishedRx.value;
+        (controller.isMyTurn.value || controller.isHotSeat) && !controller.gameFinishedRx.value;
     if (!canPlay) return;
 
     controller.clearPendingPlacement();
@@ -462,78 +547,83 @@ class _ScoreBlock extends StatelessWidget {
   final String score;
   final Color color;
   final bool alignEnd;
+  final bool active;
 
   const _ScoreBlock({
     required this.label,
     required this.score,
     required this.color,
     this.alignEnd = false,
+    this.active = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment:
-          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Row(
-          mainAxisAlignment:
-              alignEnd ? MainAxisAlignment.end : MainAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 13,
-              height: 13,
-              decoration: BoxDecoration(
+    return AnimatedOpacity(
+      opacity: active ? 1.0 : 0.55,
+      duration: const Duration(milliseconds: 200),
+      child: Column(
+        crossAxisAlignment:
+            alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment:
+                alignEnd ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.ink,
+                    width: 1.5,
+                  ),
+                  boxShadow: AppShadows.hard(offset: 1.5),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: alignEnd ? TextAlign.right : TextAlign.left,
+                  style: GoogleFonts.blackHanSans(
+                    color: AppColors.ink,
+                    fontSize: 13,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
+            child: Text(
+              score,
+              style: GoogleFonts.blackHanSans(
                 color: color,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.28),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                fontSize: 58,
+                height: 1,
+                letterSpacing: 0,
+                shadows: [
+                  Shadow(
+                    color: AppColors.ink.withValues(alpha: 0.9),
+                    offset: const Offset(2.5, 2.5),
+                    blurRadius: 0,
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: alignEnd ? TextAlign.right : TextAlign.left,
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.ink,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
-          child: Text(
-            score,
-            style: GoogleFonts.blackHanSans(
-              color: color,
-              fontSize: 58,
-              height: 1,
-              letterSpacing: 0,
-              shadows: [
-                Shadow(
-                  color: AppColors.ink.withValues(alpha: 0.18),
-                  offset: const Offset(2, 2),
-                  blurRadius: 0,
-                ),
-              ],
-            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
